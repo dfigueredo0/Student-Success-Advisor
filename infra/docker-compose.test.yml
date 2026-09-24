@@ -1,0 +1,10 @@
+# CI / throwaway override: layer on top of docker-compose.yml.
+#   docker compose -f infra/docker-compose.yml -f infra/docker-compose.test.yml up -d --wait
+# Postgres runs on tmpfs so every run starts from an empty database.
+
+services:
+  postgres:
+    volumes: !override
+      - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
+    tmpfs:
+      - /var/lib/postgresql/data

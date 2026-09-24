@@ -1,0 +1,111 @@
+[project]
+name = "student-success-advisor"
+version = "0.1.0"
+description = "An intelligent advising agent providing 24/7 personalized academic guidance."
+readme = "README.md"
+license = "MIT"
+license-files = ["LICEN[CS]E*"]
+authors = [
+    { name = "Dylan Figueredo", email = "d.figueredo2104@gmail.com" },
+    { name = "Ronal Rajesh", email = "ronalrajesh@outlook.com" },
+    { name = "Sokol Memedi", email = "sokol.memedi8@gmail.com" },
+    { name = "Sanad Salem" },
+    { name = "Amir Sabljic", email = "asabljic@hawk.illinoistech.edu" },
+]
+requires-python = ">=3.12"
+dependencies = [
+    "alembic>=1.14",
+    "httpx>=0.28",
+    "psycopg[binary]>=3.2",
+    "pydantic>=2.9",
+    "pydantic-settings>=2.6",
+    "sqlalchemy>=2.0.36",
+]
+
+[project.urls]
+Repository = "https://github.com/dfigueredo0/Student-Success-Advisor"
+
+[project.scripts]
+student-success-advisor = "student_success_advisor:main"
+
+[dependency-groups]
+ingest = [
+    "pypdf>=5.0",
+    "selenium>=4.25",
+    "webdriver-manager>=4.0",
+]
+test = [
+    "pytest>=8.3",
+    "pytest-timeout>=2.3",
+]
+lint = [
+    "import-linter>=2.1",
+    "ruff>=0.8",
+]
+dev = [
+    { include-group = "test" },
+    { include-group = "lint" },
+]
+
+[build-system]
+requires = ["hatchling>=1.26"]
+build-backend = "hatchling.build"
+
+# `src/` holds several top-level packages (agents, api, domain, ...) plus
+# settings.py, so the whole directory is the import root.
+[tool.hatch.build.targets.wheel]
+only-include = ["src"]
+sources = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests", "eval"]
+addopts = ["-ra", "--strict-markers", "--strict-config"]
+timeout = 300
+markers = [
+    "unit: fast, hermetic tests with no network or containers",
+    "integration: needs the docker compose stack (make up)",
+    "eval: model-quality evaluations against the eval harness",
+    "e2e: full request path through the API",
+    "slow: takes more than a few seconds; excluded from the pre-commit loop",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+extend-exclude = ["pipelines/ingest"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+
+[tool.ruff.lint.isort]
+known-first-party = [
+    "agents", "api", "domain", "memory", "orchestrator", "retrieval",
+    "schemas", "settings", "student_success_advisor", "tools",
+]
+
+[tool.importlinter]
+# settings.py is a lone module, so it is seen as an external import here.
+root_packages = [
+    "agents", "api", "domain", "memory", "orchestrator", "retrieval",
+    "schemas", "tools",
+]
+include_external_packages = true
+
+[[tool.importlinter.contracts]]
+name = "1.2-1a: layered architecture (api > orchestrator > agents > tools > domain > schemas)"
+type = "layers"
+layers = [
+    "api",
+    "orchestrator",
+    "agents",
+    "tools",
+    "memory | retrieval",
+    "domain",
+    "schemas",
+]
+
+[[tool.importlinter.contracts]]
+name = "1.2-1b: domain is pure (no LLM, I/O, or settings)"
+type = "forbidden"
+source_modules = ["domain", "schemas"]
+forbidden_modules = ["settings", "httpx", "sqlalchemy", "psycopg", "alembic"]
