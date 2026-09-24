@@ -1,0 +1,859 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full bg-slate-50 text-slate-900">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Academic Advisor & Course Trajectory</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; }
+        
+        /* Clean SVG overlay styling */
+        .svg-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .prereq-line {
+            stroke: #94a3b8;
+            stroke-width: 1.5;
+            fill: none;
+            transition: all 0.2s ease;
+        }
+
+        .prereq-line.completed {
+            stroke: #10b981;
+            stroke-width: 2;
+        }
+
+        .prereq-line.active {
+            stroke: #2563eb;
+            stroke-width: 2.5;
+            stroke-dasharray: 4 4;
+            animation: flow 1s linear infinite;
+        }
+
+        @keyframes flow {
+            to { stroke-dashoffset: -8; }
+        }
+
+        /* Subtle scrollbars */
+        ::-webkit-scrollbar { width: 5px; height: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="h-full flex flex-col bg-slate-50 font-sans antialiased selection:bg-slate-200">
+
+    <!-- VIEW 1: AUTHENTICATION / SIGN IN PAGE -->
+    <div id="auth-view" class="min-h-screen w-full flex flex-col items-center justify-center p-4 bg-slate-50">
+        <div class="w-full max-w-sm space-y-6">
+            <!-- Header Brand -->
+            <div class="text-center space-y-2">
+                <div class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-900 text-white shadow-sm mb-1">
+                    <i data-lucide="graduation-cap" class="w-5 h-5"></i>
+                </div>
+                <h1 class="text-xl font-bold tracking-tight text-slate-900">Academic Trajectory Planner</h1>
+                <p class="text-xs text-slate-500">Sign in to view your degree flow & advisor dashboard</p>
+            </div>
+
+            <!-- Sign In Form Box -->
+            <div class="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-4">
+                <form id="login-form" onsubmit="handleLogin(event)" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Student Email or ID</label>
+                        <input type="text" id="login-id" required value="alex.johnson@university.edu" 
+                               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition" />
+                    </div>
+                    <div>
+                        <label class="block text-xs font-medium text-slate-700 mb-1">Password</label>
+                        <input type="password" id="login-pass" required value="••••••••••••" 
+                               class="w-full px-3 py-2 text-xs border border-slate-300 rounded-lg focus:outline-none focus:ring-1 focus:ring-slate-900 focus:border-slate-900 transition" />
+                    </div>
+                    
+                    <button type="submit" 
+                            class="w-full py-2 px-4 bg-slate-900 hover:bg-slate-800 text-white rounded-lg text-xs font-medium shadow-sm transition flex items-center justify-center space-x-2">
+                        <span>Sign In to Portal</span>
+                        <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+                    </button>
+                </form>
+
+                <div class="relative my-4">
+                    <div class="absolute inset-0 flex items-center"><div class="w-full border-t border-slate-200"></div></div>
+                    <div class="relative flex justify-center text-[10px] uppercase tracking-wider text-slate-400 bg-white px-2">Quick Demo Sign In</div>
+                </div>
+
+                <!-- Preset Quick Buttons for Testing -->
+                <div class="grid grid-cols-2 gap-2 text-left">
+                    <button onclick="loginPreset('senior')" class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition text-xs">
+                        <div class="font-medium text-slate-900">Alex Johnson</div>
+                        <div class="text-[10px] text-slate-500">Junior/Senior • 64 Cr</div>
+                    </button>
+                    <button onclick="loginPreset('freshman')" class="p-2.5 rounded-lg border border-slate-200 hover:border-slate-300 hover:bg-slate-50 transition text-xs">
+                        <div class="font-medium text-slate-900">Jordan Lee</div>
+                        <div class="text-[10px] text-slate-500">Freshman • 16 Cr</div>
+                    </button>
+                </div>
+            </div>
+
+            <div class="text-center text-[11px] text-slate-400">
+                IPRO 497 Academic Flow Prototype
+            </div>
+        </div>
+    </div>
+
+
+    <!-- VIEW 2: MAIN DASHBOARD VIEW (Hidden until signed in) -->
+    <div id="app-view" class="hidden h-screen flex flex-col overflow-hidden bg-slate-50">
+
+        <!-- Top Navigation Bar -->
+        <header class="h-14 bg-white border-b border-slate-200 px-5 flex items-center justify-between z-20 shrink-0">
+            <div class="flex items-center space-x-3">
+                <div class="w-8 h-8 rounded-lg bg-slate-900 text-white flex items-center justify-center font-bold text-sm">
+                    <i data-lucide="compass" class="w-4 h-4"></i>
+                </div>
+                <div>
+                    <h1 class="text-sm font-semibold text-slate-900 leading-none">Course Trajectory Map</h1>
+                    <p class="text-[11px] text-slate-500 mt-0.5">IPRO 497 - AI Academic Advisor</p>
+                </div>
+            </div>
+
+            <!-- Student Profile Bar & Quick Actions -->
+            <div class="flex items-center space-x-4 text-xs">
+                <div class="hidden md:flex items-center space-x-4 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg">
+                    <div class="flex items-center space-x-2">
+                        <div id="profile-avatar" class="w-6 h-6 rounded-full bg-slate-200 text-slate-700 font-bold flex items-center justify-center text-[10px]">
+                            AJ
+                        </div>
+                        <span id="profile-name" class="font-medium text-slate-900">Alex Johnson</span>
+                    </div>
+                    <span class="text-slate-300">|</span>
+                    <div>
+                        <span class="text-slate-500">Major:</span>
+                        <span id="profile-major" class="font-medium text-slate-800">Computer Science</span>
+                    </div>
+                    <span class="text-slate-300">|</span>
+                    <div>
+                        <span class="text-slate-500">GPA:</span>
+                        <span id="profile-gpa" class="font-semibold text-emerald-600">3.78</span>
+                    </div>
+                    <span class="text-slate-300">|</span>
+                    <div>
+                        <span class="text-slate-500">Credits:</span>
+                        <span id="profile-credits" class="font-medium text-slate-800">64 / 126</span>
+                    </div>
+                </div>
+
+                <button onclick="openUploadModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-medium rounded-lg transition flex items-center space-x-1.5 shadow-sm">
+                    <i data-lucide="upload-cloud" class="w-3.5 h-3.5"></i>
+                    <span>Upload Transcript</span>
+                </button>
+
+                <button onclick="handleSignOut()" class="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition" title="Sign Out">
+                    <i data-lucide="log-out" class="w-4 h-4"></i>
+                </button>
+            </div>
+        </header>
+
+        <!-- Main Application Split Workspace -->
+        <div class="flex-1 flex overflow-hidden">
+
+            <!-- LEFT/MAIN AREA: Course Flowchart Diagram (68%) -->
+            <main class="w-full lg:w-[68%] flex flex-col bg-slate-100/60 relative border-r border-slate-200">
+                
+                <!-- Flowchart Controls Header -->
+                <div class="px-5 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between text-xs z-20">
+                    <div class="flex items-center space-x-1.5">
+                        <span class="text-slate-500 font-medium mr-1">Filter:</span>
+                        <button onclick="filterCategory('ALL')" class="filter-tab active px-2.5 py-1 rounded-md bg-slate-900 text-white font-medium transition">All</button>
+                        <button onclick="filterCategory('MAJOR')" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-100 transition">CS Major</button>
+                        <button onclick="filterCategory('MATH')" class="filter-tab px-2.5 py-1 rounded-md text-slate-600 hover:bg-slate-100 transition">Math & Science</button>
+                    </div>
+
+                    <!-- Flowchart Legend -->
+                    <div class="flex items-center space-x-4 text-[11px] text-slate-500">
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-emerald-500"></span><span>Completed</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-blue-500"></span><span>In Progress</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-amber-500"></span><span>Available</span></span>
+                        <span class="flex items-center space-x-1"><span class="w-2 h-2 rounded-full bg-slate-300"></span><span>Locked</span></span>
+                    </div>
+                </div>
+
+                <!-- Scrollable Flowchart Grid Container -->
+                <div id="flowchart-container" class="flex-1 overflow-x-auto overflow-y-auto p-6 relative">
+                    <!-- SVG lines connector layer -->
+                    <svg id="svg-layer" class="svg-overlay"></svg>
+
+                    <!-- Columns Container -->
+                    <div id="terms-grid" class="flex space-x-6 min-w-max relative z-10 pb-8">
+                        <!-- Rendered by JS -->
+                    </div>
+                </div>
+
+                <!-- Footer Stats & Info -->
+                <div class="px-5 py-2 bg-white border-t border-slate-200 text-[11px] text-slate-500 flex justify-between items-center z-20">
+                    <span class="flex items-center space-x-1">
+                        <i data-lucide="mouse-pointer" class="w-3 h-3 text-slate-400"></i>
+                        <span>Click any course card to inspect prerequisites and course details.</span>
+                    </span>
+                    <span id="degree-progress-summary" class="font-medium text-slate-700">Degree Completion: 51%</span>
+                </div>
+            </main>
+
+            <!-- RIGHT SIDEBAR AREA: AI Advisor Chat (32%) -->
+            <aside class="w-full lg:w-[32%] flex flex-col bg-white h-full">
+                
+                <!-- Chat Panel Header -->
+                <div class="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
+                    <div class="flex items-center space-x-2">
+                        <div class="w-7 h-7 rounded-lg bg-slate-100 text-slate-800 border border-slate-200 flex items-center justify-center">
+                            <i data-lucide="bot" class="w-4 h-4"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-xs font-semibold text-slate-900">Advisor AI Assistant</h2>
+                            <p class="text-[10px] text-slate-400">Connected to Academic Engine</p>
+                        </div>
+                    </div>
+                    <button onclick="resetChat()" title="Clear Chat History" class="p-1 text-slate-400 hover:text-slate-600 rounded">
+                        <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+                    </button>
+                </div>
+
+                <!-- Quick Prompts Row -->
+                <div class="p-2.5 bg-slate-50/80 border-b border-slate-200 overflow-x-auto flex space-x-1.5 scrollbar-none">
+                    <button onclick="quickPrompt('What courses should I register for next semester?')" 
+                            class="whitespace-nowrap px-2.5 py-1 rounded-md text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-2xs">
+                        💡 Next Term Recs
+                    </button>
+                    <button onclick="quickPrompt('Am I eligible to register for IPRO 497?')" 
+                            class="whitespace-nowrap px-2.5 py-1 rounded-md text-[11px] bg-white border border-slate-200 text-slate-700 hover:bg-slate-100 transition shadow-2xs">
+                        🚀 Check IPRO 497
+                    </button>
+                </div>
+
+                <!-- Chat Message Stream -->
+                <div id="chat-stream" class="flex-1 p-4 overflow-y-auto space-y-3 text-xs">
+                    <div class="flex items-start space-x-2">
+                        <div class="w-6 h-6 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+                            <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+                        </div>
+                        <div class="bg-slate-100 border border-slate-200 text-slate-800 p-2.5 rounded-lg max-w-[88%] leading-relaxed">
+                            Hello! I am your AI academic advisor. I can help answer prerequisite questions, verify degree requirements, or analyze transcript updates.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Typing indicator -->
+                <div id="typing-indicator" class="hidden px-4 py-1.5 text-[11px] text-slate-400 flex items-center space-x-1.5">
+                    <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i>
+                    <span>Analyzing degree requirements...</span>
+                </div>
+
+                <!-- Chat Input Box -->
+                <div class="p-3 border-t border-slate-200 bg-white">
+                    <form onsubmit="handleSendMessage(event)" class="flex items-center space-x-2">
+                        <input type="text" id="chat-input" placeholder="Ask a question about your plan..." 
+                               class="flex-1 px-3 py-2 text-xs border border-slate-200 rounded-lg focus:outline-none focus:border-slate-400 transition" />
+                        <button type="submit" class="p-2 bg-slate-900 text-white rounded-lg hover:bg-slate-800 transition">
+                            <i data-lucide="send" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </form>
+                </div>
+            </aside>
+        </div>
+    </div>
+
+
+    <!-- TRANSCRIPT UPLOAD MODAL -->
+    <div id="upload-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-md w-full shadow-lg overflow-hidden">
+            <!-- Modal Header -->
+            <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-center">
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-900">Upload Academic Transcript</h3>
+                    <p class="text-xs text-slate-500">Supports official PDF or text transcript files</p>
+                </div>
+                <button onclick="closeUploadModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <!-- Dropzone Content -->
+            <div class="p-5 space-y-4">
+                <div id="dropzone" 
+                     ondragover="handleDragOver(event)" 
+                     ondragleave="handleDragLeave(event)" 
+                     ondrop="handleFileDrop(event)"
+                     onclick="document.getElementById('file-input').click()"
+                     class="border-2 border-dashed border-slate-200 hover:border-slate-400 rounded-xl p-6 text-center cursor-pointer transition bg-slate-50/50 hover:bg-slate-50 flex flex-col items-center justify-center space-y-2">
+                    
+                    <input type="file" id="file-input" class="hidden" accept=".pdf,.txt,.json" onchange="handleFileSelect(event)" />
+                    <div class="w-10 h-10 rounded-full bg-white border border-slate-200 text-slate-600 flex items-center justify-center shadow-2xs">
+                        <i data-lucide="file-up" class="w-5 h-5"></i>
+                    </div>
+                    <div class="text-xs">
+                        <span class="font-medium text-slate-900">Click to upload</span> or drag and drop
+                        <p class="text-[10px] text-slate-400 mt-0.5">PDF or TXT up to 10MB</p>
+                    </div>
+                </div>
+
+                <!-- Demo Transcripts Quick Test Buttons -->
+                <div class="space-y-1.5 pt-2">
+                    <span class="text-[11px] font-medium text-slate-500">Or simulate transcript upload with sample data:</span>
+                    <div class="grid grid-cols-2 gap-2">
+                        <button onclick="applySampleTranscript('passed_all')" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-left transition text-xs">
+                            <div class="font-medium text-slate-900">Completed Term 2</div>
+                            <div class="text-[10px] text-slate-500">Passes CS 331 & CS 330</div>
+                        </button>
+                        <button onclick="applySampleTranscript('senior_standing')" class="p-2 border border-slate-200 rounded-lg hover:bg-slate-50 text-left transition text-xs">
+                            <div class="font-medium text-slate-900">Senior Standing</div>
+                            <div class="text-[10px] text-slate-500">Unlocks Capstone & Electives</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Uploading Status Progress Bar -->
+                <div id="parsing-progress" class="hidden space-y-1.5 pt-2 border-t border-slate-100">
+                    <div class="flex justify-between text-xs">
+                        <span id="parsing-status-text" class="text-slate-700 font-medium flex items-center gap-1">
+                            <i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Parsing transcript file...
+                        </span>
+                        <span id="parsing-percent" class="text-slate-500 font-mono">0%</span>
+                    </div>
+                    <div class="w-full bg-slate-100 rounded-full h-1.5 overflow-hidden">
+                        <div id="parsing-bar" class="bg-slate-900 h-1.5 w-0 transition-all duration-300"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-end">
+                <button onclick="closeUploadModal()" class="px-3 py-1.5 bg-white border border-slate-200 hover:bg-slate-100 text-slate-700 text-xs font-medium rounded-lg transition">
+                    Close
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- COURSE DETAIL MODAL -->
+    <div id="course-modal" class="hidden fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+        <div class="bg-white border border-slate-200 rounded-xl max-w-md w-full shadow-lg overflow-hidden">
+            <div class="px-5 py-4 border-b border-slate-200 flex justify-between items-start">
+                <div>
+                    <div class="flex items-center space-x-2">
+                        <span id="modal-code" class="text-sm font-bold text-slate-900">CS 331</span>
+                        <span id="modal-badge" class="px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                            Available
+                        </span>
+                    </div>
+                    <h3 id="modal-title" class="text-xs font-semibold text-slate-600 mt-0.5">Data Structures & Algorithms</h3>
+                </div>
+                <button onclick="closeCourseModal()" class="text-slate-400 hover:text-slate-600">
+                    <i data-lucide="x" class="w-4 h-4"></i>
+                </button>
+            </div>
+
+            <div class="p-5 space-y-3 text-xs">
+                <div class="grid grid-cols-3 gap-2 p-2.5 bg-slate-50 rounded-lg border border-slate-100 text-[11px]">
+                    <div><span class="text-slate-400 block">Credits</span><span id="modal-credits" class="font-medium text-slate-800">3.0</span></div>
+                    <div><span class="text-slate-400 block">Category</span><span id="modal-category" class="font-medium text-slate-800">MAJOR</span></div>
+                    <div><span class="text-slate-400 block">Term</span><span id="modal-term" class="font-medium text-slate-800">Fall Year 2</span></div>
+                </div>
+
+                <div>
+                    <span class="font-medium text-slate-900 block mb-1">Course Description</span>
+                    <p id="modal-desc" class="text-slate-600 leading-relaxed text-[11px]">Description text here.</p>
+                </div>
+
+                <div>
+                    <span class="font-medium text-slate-900 block mb-1">Prerequisites</span>
+                    <div id="modal-prereqs" class="flex flex-wrap gap-1"></div>
+                </div>
+
+                <div class="p-3 bg-slate-50 rounded-lg border border-slate-200 space-y-1">
+                    <span class="font-medium text-slate-900 flex items-center gap-1 text-[11px]">
+                        <i data-lucide="sparkles" class="w-3 h-3 text-slate-600"></i> AI Advisory Note
+                    </span>
+                    <p id="modal-ai-note" class="text-slate-600 text-[11px] leading-relaxed">Advisory note text here.</p>
+                </div>
+            </div>
+
+            <div class="px-5 py-3 border-t border-slate-200 bg-slate-50 flex justify-between">
+                <button onclick="askAIAboutSelectedCourse()" class="px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 text-xs font-medium rounded-lg transition flex items-center space-x-1">
+                    <i data-lucide="message-square" class="w-3 h-3"></i>
+                    <span>Ask AI About Course</span>
+                </button>
+                <button onclick="closeCourseModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white text-xs font-medium rounded-lg transition">
+                    Done
+                </button>
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        /*
+        ========================================================================
+        STATE & INITIAL DATA MODEL
+        ========================================================================
+        */
+        let currentUser = null;
+        let selectedCourse = null;
+        let activeFilter = 'ALL';
+
+        const defaultCourses = [
+            // Year 1 Fall
+            { id: 'CS115', code: 'CS 115', title: 'OOP Programming I', term: 'Fall Year 1', status: 'COMPLETED', credits: 3, category: 'MAJOR', prereqs: [], desc: 'Fundamental programming structures and OOP logic using Java.', aiNote: 'Foundational major requirement.' },
+            { id: 'MATH151', code: 'MATH 151', title: 'Calculus I', term: 'Fall Year 1', status: 'COMPLETED', credits: 5, category: 'MATH', prereqs: [], desc: 'Functions, limits, derivatives, and integral foundations.', aiNote: 'Satisfies quantitative requirement.' },
+            { id: 'HUM101', code: 'HUM 101', title: 'Humanities Composition', term: 'Fall Year 1', status: 'COMPLETED', credits: 3, category: 'GENED', prereqs: [], desc: 'Academic writing and critical text synthesis.', aiNote: 'General education requirement satisfied.' },
+
+            // Year 1 Spring
+            { id: 'CS116', code: 'CS 116', title: 'OOP Programming II', term: 'Spring Year 1', status: 'COMPLETED', credits: 3, category: 'MAJOR', prereqs: ['CS115'], desc: 'Inheritance, polymorphism, and baseline data structures.', aiNote: 'Direct prerequisite for CS 331.' },
+            { id: 'MATH152', code: 'MATH 152', title: 'Calculus II', term: 'Spring Year 1', status: 'COMPLETED', credits: 5, category: 'MATH', prereqs: ['MATH151'], desc: 'Integral techniques, parametric equations, and series.', aiNote: 'Prerequisite for CS 330.' },
+            { id: 'PHYS123', code: 'PHYS 123', title: 'General Physics I', term: 'Spring Year 1', status: 'COMPLETED', credits: 4, category: 'MATH', prereqs: ['MATH151'], desc: 'Newtonian mechanics, energy, and thermodynamics.', aiNote: 'Science core requirement satisfied.' },
+
+            // Year 2 Fall (Current)
+            { id: 'CS331', code: 'CS 331', title: 'Data Structures & Alg', term: 'Fall Year 2', status: 'IN_PROGRESS', credits: 3, category: 'MAJOR', prereqs: ['CS116'], desc: 'Trees, graphs, heaps, time complexity, and sorting algorithms.', aiNote: 'Crucial for upper-level software development.' },
+            { id: 'CS330', code: 'CS 330', title: 'Discrete Structures', term: 'Fall Year 2', status: 'IN_PROGRESS', credits: 3, category: 'MAJOR', prereqs: ['MATH152'], desc: 'Logic, proof techniques, set theory, and graph theory.', aiNote: 'Core theoretical foundation for computer science.' },
+            { id: 'PHYS221', code: 'PHYS 221', title: 'General Physics II', term: 'Fall Year 2', status: 'IN_PROGRESS', credits: 4, category: 'MATH', prereqs: ['PHYS123'], desc: 'Electromagnetism, fields, and modern physics.', aiNote: 'Completes laboratory science requirements.' },
+
+            // Year 2 Spring
+            { id: 'CS350', code: 'CS 350', title: 'Computer Organization', term: 'Spring Year 2', status: 'AVAILABLE', credits: 3, category: 'MAJOR', prereqs: ['CS116'], desc: 'CPU architecture, memory hierarchy, and assembly language.', aiNote: 'Recommended registration for next semester.' },
+            { id: 'CS351', code: 'CS 351', title: 'Systems Programming', term: 'Spring Year 2', status: 'LOCKED', credits: 3, category: 'MAJOR', prereqs: ['CS331'], desc: 'Unix systems programming, C language, processes, and memory.', aiNote: 'Will unlock once CS 331 is marked complete.' },
+            { id: 'IPRO497', code: 'IPRO 497', title: 'Interprofessional Project', term: 'Spring Year 2', status: 'AVAILABLE', credits: 3, category: 'MAJOR', prereqs: ['CS116'], desc: 'Multidisciplinary capstone project collaborating with industry partners.', aiNote: 'You meet prerequisites to register!' },
+
+            // Year 3 Fall
+            { id: 'CS425', code: 'CS 425', title: 'Database Organization', term: 'Fall Year 3', status: 'LOCKED', credits: 3, category: 'MAJOR', prereqs: ['CS331'], desc: 'Relational database design, SQL querying, and transactions.', aiNote: 'Prerequisite CS 331 required.' },
+            { id: 'CS450', code: 'CS 450', title: 'Operating Systems', term: 'Fall Year 3', status: 'LOCKED', credits: 3, category: 'MAJOR', prereqs: ['CS351'], desc: 'Process synchronization, virtual memory, and kernel structure.', aiNote: 'Requires CS 351 completion.' }
+        ];
+
+        let courses = JSON.parse(JSON.stringify(defaultCourses));
+        const terms = ['Fall Year 1', 'Spring Year 1', 'Fall Year 2', 'Spring Year 2', 'Fall Year 3'];
+
+        /*
+        ========================================================================
+        AUTHENTICATION & SESSION HANDLING
+        ========================================================================
+        */
+        // BACKEND API HOOK POINT: Replace with real POST /api/login endpoint
+        function handleLogin(e) {
+            e.preventDefault();
+            const email = document.getElementById('login-id').value;
+            
+            currentUser = {
+                name: "Alex Johnson",
+                avatar: "AJ",
+                major: "Computer Science",
+                gpa: "3.78",
+                earnedCredits: 64,
+                totalCredits: 126
+            };
+            
+            showAppView();
+        }
+
+        function loginPreset(type) {
+            if (type === 'senior') {
+                currentUser = {
+                    name: "Alex Johnson",
+                    avatar: "AJ",
+                    major: "Computer Science",
+                    gpa: "3.78",
+                    earnedCredits: 64,
+                    totalCredits: 126
+                };
+            } else {
+                currentUser = {
+                    name: "Jordan Lee",
+                    avatar: "JL",
+                    major: "Computer Science",
+                    gpa: "3.50",
+                    earnedCredits: 16,
+                    totalCredits: 126
+                };
+                // Simplify courses for freshman state
+                courses.forEach(c => {
+                    if (['CS115', 'MATH151', 'HUM101'].includes(c.id)) c.status = 'COMPLETED';
+                    else if (['CS116', 'MATH152', 'PHYS123'].includes(c.id)) c.status = 'IN_PROGRESS';
+                    else c.status = 'LOCKED';
+                });
+            }
+            showAppView();
+        }
+
+        function showAppView() {
+            document.getElementById('auth-view').classList.add('hidden');
+            document.getElementById('app-view').classList.remove('hidden');
+
+            document.getElementById('profile-name').innerText = currentUser.name;
+            document.getElementById('profile-avatar').innerText = currentUser.avatar;
+            document.getElementById('profile-major').innerText = currentUser.major;
+            document.getElementById('profile-gpa').innerText = currentUser.gpa;
+            document.getElementById('profile-credits').innerText = `${currentUser.earnedCredits} / ${currentUser.totalCredits}`;
+
+            renderFlowchart();
+        }
+
+        function handleSignOut() {
+            document.getElementById('app-view').classList.add('hidden');
+            document.getElementById('auth-view').classList.remove('hidden');
+        }
+
+        /*
+        ========================================================================
+        FLOWCHART RENDERING LOGIC
+        ========================================================================
+        */
+        function renderFlowchart() {
+            const grid = document.getElementById('terms-grid');
+            grid.innerHTML = '';
+
+            const percent = Math.round((currentUser.earnedCredits / currentUser.totalCredits) * 100);
+            document.getElementById('degree-progress-summary').innerText = `Degree Completion: ${percent}%`;
+
+            terms.forEach(term => {
+                const col = document.createElement('div');
+                col.className = 'w-60 flex-shrink-0 flex flex-col space-y-3';
+
+                // Term Column Header
+                const header = document.createElement('div');
+                header.className = 'px-3 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 flex justify-between items-center';
+                header.innerHTML = `<span>${term}</span><span class="text-[10px] font-normal text-slate-400">Semester</span>`;
+                col.appendChild(header);
+
+                // Filter matching courses
+                const termCourses = courses.filter(c => c.term === term && (activeFilter === 'ALL' || c.category === activeFilter));
+
+                termCourses.forEach(course => {
+                    const card = createCourseNode(course);
+                    col.appendChild(card);
+                });
+
+                grid.appendChild(col);
+            });
+
+            lucide.createIcons();
+            setTimeout(drawConnections, 80);
+        }
+
+        function createCourseNode(course) {
+            const node = document.createElement('div');
+            node.id = `node-${course.id}`;
+            node.dataset.id = course.id;
+
+            let statusClasses = '';
+            let badgeStyle = '';
+            let badgeText = '';
+
+            switch(course.status) {
+                case 'COMPLETED':
+                    statusClasses = 'bg-white border-slate-200 hover:border-slate-400';
+                    badgeStyle = 'bg-emerald-50 text-emerald-700 border-emerald-200';
+                    badgeText = 'Completed';
+                    break;
+                case 'IN_PROGRESS':
+                    statusClasses = 'bg-white border-blue-300 ring-1 ring-blue-100 hover:border-blue-400';
+                    badgeStyle = 'bg-blue-50 text-blue-700 border-blue-200';
+                    badgeText = 'In Progress';
+                    break;
+                case 'AVAILABLE':
+                    statusClasses = 'bg-white border-amber-300 ring-1 ring-amber-100 hover:border-amber-400';
+                    badgeStyle = 'bg-amber-50 text-amber-800 border-amber-200';
+                    badgeText = 'Available';
+                    break;
+                default: // LOCKED
+                    statusClasses = 'bg-slate-100/80 border-slate-200 text-slate-400 hover:border-slate-300';
+                    badgeStyle = 'bg-slate-200/60 text-slate-500 border-slate-300';
+                    badgeText = 'Locked';
+            }
+
+            node.className = `p-3 rounded-lg border text-xs cursor-pointer transition shadow-2xs ${statusClasses}`;
+            node.innerHTML = `
+                <div class="flex items-center justify-between mb-1">
+                    <span class="font-bold text-slate-900 text-xs">${course.code}</span>
+                    <span class="px-1.5 py-0.5 rounded text-[9px] font-medium border ${badgeStyle}">${badgeText}</span>
+                </div>
+                <div class="font-medium text-slate-700 text-[11px] line-clamp-1 mb-2">${course.title}</div>
+                <div class="flex items-center justify-between text-[10px] text-slate-400 pt-1.5 border-t border-slate-100">
+                    <span>${course.credits} Cr</span>
+                    <span class="font-mono text-[9px] uppercase">${course.category}</span>
+                </div>
+            `;
+
+            node.onclick = () => openCourseModal(course);
+            return node;
+        }
+
+        /*
+        ========================================================================
+        PREREQUISITE SVG CONNECTOR LINES
+        ========================================================================
+        */
+        function drawConnections() {
+            const svg = document.getElementById('svg-layer');
+            const container = document.getElementById('flowchart-container');
+            svg.innerHTML = '';
+
+            const cRect = container.getBoundingClientRect();
+
+            courses.forEach(course => {
+                if (course.prereqs && course.prereqs.length > 0) {
+                    const targetNode = document.getElementById(`node-${course.id}`);
+                    if (!targetNode) return;
+
+                    course.prereqs.forEach(prereqId => {
+                        const sourceNode = document.getElementById(`node-${prereqId}`);
+                        if (!sourceNode) return;
+
+                        const sRect = sourceNode.getBoundingClientRect();
+                        const tRect = targetNode.getBoundingClientRect();
+
+                        const x1 = sRect.right - cRect.left + container.scrollLeft;
+                        const y1 = sRect.top + (sRect.height / 2) - cRect.top + container.scrollTop;
+                        const x2 = tRect.left - cRect.left + container.scrollLeft;
+                        const y2 = tRect.top + (tRect.height / 2) - cRect.top + container.scrollTop;
+
+                        const dx = (x2 - x1) * 0.5;
+                        const pathData = `M ${x1} ${y1} C ${x1 + dx} ${y1}, ${x2 - dx} ${y2}, ${x2} ${y2}`;
+
+                        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                        path.setAttribute('d', pathData);
+
+                        const sourceCourse = courses.find(c => c.id === prereqId);
+                        const isCompleted = sourceCourse && sourceCourse.status === 'COMPLETED';
+
+                        path.setAttribute('class', `prereq-line ${isCompleted ? 'completed' : ''}`);
+                        path.setAttribute('id', `line-${prereqId}-${course.id}`);
+
+                        svg.appendChild(path);
+                    });
+                }
+            });
+        }
+
+        function filterCategory(cat) {
+            activeFilter = cat;
+            document.querySelectorAll('.filter-tab').forEach(btn => {
+                btn.classList.remove('active', 'bg-slate-900', 'text-white');
+                btn.classList.add('text-slate-600');
+            });
+            event.target.classList.add('active', 'bg-slate-900', 'text-white');
+            event.target.classList.remove('text-slate-600');
+            renderFlowchart();
+        }
+
+        /*
+        ========================================================================
+        TRANSCRIPT UPLOAD & DATA UPDATE LOGIC
+        ========================================================================
+        */
+        function openUploadModal() {
+            document.getElementById('upload-modal').classList.remove('hidden');
+            document.getElementById('parsing-progress').classList.add('hidden');
+        }
+
+        function closeUploadModal() {
+            document.getElementById('upload-modal').classList.add('hidden');
+        }
+
+        function handleDragOver(e) { e.preventDefault(); }
+        function handleDragLeave(e) { e.preventDefault(); }
+        
+        function handleFileDrop(e) {
+            e.preventDefault();
+            if (e.dataTransfer.files.length > 0) processTranscript(e.dataTransfer.files[0].name);
+        }
+
+        function handleFileSelect(e) {
+            if (e.target.files.length > 0) processTranscript(e.target.files[0].name);
+        }
+
+        // BACKEND API HOOK POINT: Connect to POST /api/upload-transcript here
+        async function processTranscript(fileName) {
+            const progress = document.getElementById('parsing-progress');
+            const statusText = document.getElementById('parsing-status-text');
+            const bar = document.getElementById('parsing-bar');
+            const percent = document.getElementById('parsing-percent');
+
+            progress.classList.remove('hidden');
+
+            statusText.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Parsing ${fileName}...`;
+            bar.style.width = '40%';
+            percent.innerText = '40%';
+            lucide.createIcons();
+
+            await new Promise(r => setTimeout(r, 700));
+
+            statusText.innerHTML = `<i data-lucide="loader-2" class="w-3 h-3 animate-spin"></i> Re-evaluating prerequisite tree...`;
+            bar.style.width = '80%';
+            percent.innerText = '80%';
+
+            await new Promise(r => setTimeout(r, 700));
+
+            bar.style.width = '100%';
+            percent.innerText = '100%';
+
+            // Mark CS 331 & 330 completed, unlock CS 351
+            courses.forEach(c => {
+                if (['CS331', 'CS330', 'PHYS221'].includes(c.id)) c.status = 'COMPLETED';
+                if (['CS350', 'CS351'].includes(c.id)) c.status = 'AVAILABLE';
+            });
+
+            currentUser.earnedCredits = 74;
+            currentUser.gpa = "3.82";
+
+            showAppView();
+            closeUploadModal();
+
+            appendChatMessage('ai', `✓ <strong>Transcript Parsed Successfully (${fileName})</strong><br>• Earned Credits updated: <strong>74 / 126</strong><br>• GPA updated: <strong>3.82</strong><br>• <strong>CS 331 & CS 330</strong> marked COMPLETED.<br>• Unlocked <strong>CS 351 (Systems Programming)</strong>.`);
+        }
+
+        function applySampleTranscript(type) {
+            if (type === 'passed_all') {
+                processTranscript("Fall_Term_Grades.pdf");
+            } else {
+                courses.forEach(c => c.status = 'COMPLETED');
+                currentUser.earnedCredits = 110;
+                currentUser.gpa = "3.85";
+                showAppView();
+                closeUploadModal();
+                appendChatMessage('ai', `✓ Loaded <strong>Senior Standing</strong> transcript state.`);
+            }
+        }
+
+        /*
+        ========================================================================
+        COURSE MODALS & AI CHAT
+        ========================================================================
+        */
+        function openCourseModal(course) {
+            selectedCourse = course;
+            
+            // Highlight connector lines
+            document.querySelectorAll('.prereq-line').forEach(l => l.classList.remove('active'));
+            course.prereqs.forEach(pId => {
+                const l = document.getElementById(`line-${pId}-${course.id}`);
+                if (l) l.classList.add('active');
+            });
+
+            document.getElementById('modal-code').innerText = course.code;
+            document.getElementById('modal-title').innerText = course.title;
+            document.getElementById('modal-credits').innerText = `${course.credits}.0`;
+            document.getElementById('modal-category').innerText = course.category;
+            document.getElementById('modal-term').innerText = course.term;
+            document.getElementById('modal-desc').innerText = course.desc;
+            document.getElementById('modal-ai-note').innerText = course.aiNote;
+
+            const badge = document.getElementById('modal-badge');
+            badge.innerText = course.status;
+
+            const prereqsContainer = document.getElementById('modal-prereqs');
+            prereqsContainer.innerHTML = '';
+            if (course.prereqs.length === 0) {
+                prereqsContainer.innerHTML = '<span class="text-slate-400 italic">None</span>';
+            } else {
+                course.prereqs.forEach(pId => {
+                    const tag = document.createElement('span');
+                    tag.className = 'px-1.5 py-0.5 rounded bg-slate-100 border border-slate-200 text-slate-700 font-mono text-[10px]';
+                    tag.innerText = pId;
+                    prereqsContainer.appendChild(tag);
+                });
+            }
+
+            document.getElementById('course-modal').classList.remove('hidden');
+        }
+
+        function closeCourseModal() {
+            document.getElementById('course-modal').classList.add('hidden');
+            document.querySelectorAll('.prereq-line').forEach(l => l.classList.remove('active'));
+        }
+
+        function askAIAboutSelectedCourse() {
+            if (!selectedCourse) return;
+            const prompt = `Tell me about ${selectedCourse.code}: ${selectedCourse.title} and why I should take it.`;
+            closeCourseModal();
+            quickPrompt(prompt);
+        }
+
+        function quickPrompt(text) {
+            document.getElementById('chat-input').value = text;
+            handleSendMessage(new Event('submit'));
+        }
+
+        // BACKEND API HOOK POINT: Connect to POST /api/chat here
+        function handleSendMessage(e) {
+            e.preventDefault();
+            const input = document.getElementById('chat-input');
+            const msg = input.value.trim();
+            if (!msg) return;
+
+            appendChatMessage('user', msg);
+            input.value = '';
+
+            document.getElementById('typing-indicator').classList.remove('hidden');
+
+            setTimeout(() => {
+                document.getElementById('typing-indicator').classList.add('hidden');
+                const reply = generateAdvisorReply(msg);
+                appendChatMessage('ai', reply);
+            }, 800);
+        }
+
+        function appendChatMessage(sender, text) {
+            const stream = document.getElementById('chat-stream');
+            const msgDiv = document.createElement('div');
+            msgDiv.className = 'flex items-start space-x-2';
+
+            if (sender === 'user') {
+                msgDiv.classList.add('justify-end');
+                msgDiv.innerHTML = `
+                    <div class="bg-slate-900 text-white p-2.5 rounded-lg max-w-[88%] leading-relaxed">
+                        ${text}
+                    </div>
+                `;
+            } else {
+                msgDiv.innerHTML = `
+                    <div class="w-6 h-6 rounded bg-slate-100 text-slate-700 border border-slate-200 flex items-center justify-center shrink-0 mt-0.5">
+                        <i data-lucide="bot" class="w-3.5 h-3.5"></i>
+                    </div>
+                    <div class="bg-slate-100 border border-slate-200 text-slate-800 p-2.5 rounded-lg max-w-[88%] leading-relaxed">
+                        ${text}
+                    </div>
+                `;
+            }
+
+            stream.appendChild(msgDiv);
+            stream.scrollTop = stream.scrollHeight;
+            lucide.createIcons();
+        }
+
+        function resetChat() {
+            document.getElementById('chat-stream').innerHTML = '';
+            appendChatMessage('ai', 'Chat history cleared.');
+        }
+
+        function generateAdvisorReply(query) {
+            const q = query.toLowerCase();
+            if (q.includes('ipro') || q.includes('497')) {
+                return "You currently meet the prerequisites for <strong>IPRO 497</strong>. It is a 3-credit capstone required for graduation.";
+            } else if (q.includes('next semester') || q.includes('register')) {
+                return "For next semester, I recommend registering for <strong>CS 350 (Computer Organization)</strong> and <strong>IPRO 497</strong>.";
+            } else {
+                return `Based on your profile (${currentUser.earnedCredits} credits completed, GPA ${currentUser.gpa}), your trajectory is on track for graduation.`;
+            }
+        }
+
+        window.addEventListener('resize', drawConnections);
+        document.getElementById('flowchart-container').addEventListener('scroll', drawConnections);
+    </script>
+</body>
+</html>
