@@ -6,20 +6,11 @@ from sqlalchemy import Engine, create_engine
 
 from settings import Settings
 
-
 @pytest.fixture(scope="session")
 def engine(settings: Settings) -> Iterator[Engine]:
     eng = create_engine(settings.database_url, pool_pre_ping=True)
     yield eng
     eng.dispose()
-
-
-@pytest.fixture(scope="session")
-def litellm(settings: Settings) -> Iterator[httpx.Client]:
-    headers = {"Authorization": f"Bearer {settings.litellm_master_key.get_secret_value()}"}
-    with httpx.Client(base_url=settings.litellm_base_url, headers=headers, timeout=60) as c:
-        yield c
-
 
 @pytest.fixture(scope="session")
 def langfuse(settings: Settings) -> Iterator[httpx.Client]:

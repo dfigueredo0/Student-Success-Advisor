@@ -14,7 +14,6 @@ from settings import Settings
 
 ALEMBIC_INI = Path(__file__).resolve().parents[2] / "alembic.ini"
 
-
 @pytest.fixture
 def empty_db_url(settings: Settings) -> Iterator[str]:
     base = make_url(settings.database_url)
@@ -29,7 +28,6 @@ def empty_db_url(settings: Settings) -> Iterator[str]:
             conn.execute(text(f'DROP DATABASE IF EXISTS "{name}" WITH (FORCE)'))
         admin.dispose()
 
-
 def _state(engine: Engine) -> tuple[str | None, bool]:
     with engine.connect() as conn:
         has_table = conn.execute(text("select to_regclass('alembic_version')")).scalar()
@@ -40,7 +38,6 @@ def _state(engine: Engine) -> tuple[str | None, bool]:
             text("select exists(select 1 from pg_extension where extname = 'vector')")
         ).scalar()
     return rev, bool(has_vector)
-
 
 def test_upgrade_downgrade_upgrade(empty_db_url: str) -> None:
     cfg = Config(str(ALEMBIC_INI))

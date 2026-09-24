@@ -6,10 +6,7 @@ from settings import Settings, get_settings
 
 TESTS_DIR = Path(__file__).parent
 
-# Every test is marked by the directory it lives in, so `pytest -m unit` and
-# CI's per-suite jobs never depend on someone remembering a decorator.
 _DIR_MARKERS = {"unit": "unit", "integration": "integration", "e2e": "e2e"}
-
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     for item in items:
@@ -25,7 +22,6 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 @pytest.fixture(scope="session")
 def settings() -> Settings:
     return get_settings()
-
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     # Suites for later phases (eval, e2e) are wired into CI before they have
