@@ -19,8 +19,8 @@ jobs:
         with:
           enable-cache: true
       - run: uv sync --locked
-      - name: pre-commit (ruff, formatting, import contracts, lockfile)
-        run: uv run pre-commit run --all-files --show-diff-on-failure
+      - name: ruff, formatting, import contracts
+        run: make lint
 
   unit:
     runs-on: ubuntu-latest

@@ -12,7 +12,6 @@ help:
 
 install: 
 	uv sync --locked
-	uv run pre-commit install
 
 .env: 
 	uv run python -c "import shutil; shutil.copyfile('.env.example', '.env')"
