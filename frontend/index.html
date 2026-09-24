@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Course Trajectory & Advisor</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+    <!-- STEP 1: MANDATORY TRANSCRIPT UPLOAD ONBOARDING -->
+    <div id="upload-screen">
+        <div class="upload-card">
+            <h1>Student Course Advisor - Transcript Upload</h1>
+            <p style="font-size: 12px; color: #555;">Please upload your unofficial transcript file (.pdf, .txt, or .json) to process your course trajectory flowchart.</p>
+            
+            <div class="file-box">
+                <strong style="display:block; font-size:13px;">Select Transcript File</strong>
+                <input type="file" id="transcript-file-input" accept=".pdf,.txt,.json" onchange="enableProcessBtn()">
+            </div>
+
+            <button id="process-btn" onclick="handleTranscriptUpload()" style="width: 100%; padding: 8px;" disabled class="btn-secondary">
+                Process & Continue
+            </button>
+
+            <div class="preset-section">
+                <p style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">OR TEST WITH A SAMPLE STUDENT PROFILE:</p>
+                <div class="preset-grid">
+                    <div class="preset-card" onclick="loadSampleStudent('senior')">
+                        <strong>Alex Johnson (Senior)</strong>
+                        <span>CS Major • 92 Credits • 3.85 GPA</span>
+                    </div>
+                    <div class="preset-card" onclick="loadSampleStudent('freshman')">
+                        <strong>Jordan Lee (Freshman)</strong>
+                        <span>CS Major • 16 Credits • 3.50 GPA</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- STEP 2: MAIN WORKSPACE VIEW -->
+    <div id="main-workspace" class="hidden">
+        
+        <!-- Header Bar -->
+        <header>
+            <div class="logo">Illinois Tech Academic Course Advisor</div>
+            
+            <div class="student-info-bar">
+                <span>Student: <strong id="info-name">Alex Johnson</strong></span>
+                <span>Major: <strong id="info-major">B.S. CS</strong></span>
+                <span>GPA: <strong id="info-gpa">3.85</strong></span>
+                <span>Credits: <strong id="info-credits">92 / 126</strong></span>
+            </div>
+
+            <button class="btn-secondary" onclick="resetToUpload()">
+                Change / Re-upload Transcript
+            </button>
+        </header>
+
+        <!-- Workspace Layout (Sidebar | Center View | Chat Panel) -->
+        <div class="workspace-body">
+            
+            <!-- LEFT NAVIGATION SIDEBAR -->
+            <nav class="nav-sidebar">
+                <div class="nav-group">
+                    <div class="nav-header">Views</div>
+                    <div class="nav-item active" id="nav-trajectory" onclick="switchView('trajectory')">
+                        Course Trajectory Map
+                    </div>
+                    <div class="nav-item" id="nav-audit" onclick="switchView('audit')">
+                        Degree Audit
+                    </div>
+                    <div class="nav-item" id="nav-transcript" onclick="switchView('transcript')">
+                        Parsed Transcript
+                    </div>
+                </div>
+
+                <div class="nav-group">
+                    <div class="nav-header">Useful Links</div>
+                    <a href="https://my.iit.edu" target="_blank" class="nav-item external-link">
+                        Student Portal ↗
+                    </a>
+                    <a href="http://bulletin.iit.edu/" target="_blank" class="nav-item external-link">
+                        Course Bulletin ↗
+                    </a>
+                    <a href="https://www.iit.edu/registrar" target="_blank" class="nav-item external-link">
+                        Academic Calendar ↗
+                    </a>
+                </div>
+            </nav>
+
+            <!-- CENTER MAIN CONTENT AREA -->
+            <div class="main-content-area">
+                
+                <!-- VIEW 1: TRAJECTORY FLOWCHART -->
+                <div id="view-trajectory" class="view-panel">
+                    <div class="trajectory-toolbar">
+                        <strong>Course Trajectory & Prerequisites Flow Map</strong>
+                        
+                        <div class="legend">
+                            <div class="legend-item"><div class="legend-box" style="background:#e8f5e9; border-color:#2e7d32;"></div> Completed</div>
+                            <div class="legend-item"><div class="legend-box" style="background:#e1f5fe; border-color:#0288d1;"></div> In Progress</div>
+                            <div class="legend-item"><div class="legend-box" style="background:#fff3e0; border-color:#ed6c02;"></div> Available</div>
+                            <div class="legend-item"><div class="legend-box" style="background:#eee; border-color:#9e9e9e;"></div> Locked</div>
+                        </div>
+                    </div>
+
+                    <div class="flowchart-board" id="flowchart-board">
+                        <!-- Dynamic Term Columns loaded via JavaScript -->
+                    </div>
+                </div>
+
+                <!-- VIEW 2: DEGREE AUDIT -->
+                <div id="view-audit" class="view-panel generic-view-content hidden">
+                    <h2>Degree Requirement Audit</h2>
+                    <p style="margin-bottom: 15px; color: #555;">Summary of progress towards Computer Science degree requirements.</p>
+                    
+                    <table class="audit-table">
+                        <thead>
+                            <tr>
+                                <th>Category</th>
+                                <th>Required Credits</th>
+                                <th>Completed</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>Computer Science Core</td>
+                                <td>42</td>
+                                <td>30</td>
+                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td>Mathematics & Science</td>
+                                <td>32</td>
+                                <td>28</td>
+                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td>IPRO Capstone Courses</td>
+                                <td>6</td>
+                                <td>3</td>
+                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
+                            </tr>
+                            <tr>
+                                <td>Humanities & Social Sciences</td>
+                                <td>21</td>
+                                <td>21</td>
+                                <td><span class="status-tag" style="background:#e8f5e9; color:#2e7d32;">Complete</span></td>
+                            </tr>
+                            <tr>
+                                <td>Free Electives</td>
+                                <td>25</td>
+                                <td>10</td>
+                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- VIEW 3: PARSED TRANSCRIPT DETAILS -->
+                <div id="view-transcript" class="view-panel generic-view-content hidden">
+                    <div class="table-actions-bar">
+                        <div>
+                            <h2>Parsed Transcript & Course Records</h2>
+                            <p style="color: #555; font-size: 12px;">Modify parsed course details below. Changes automatically update your Trajectory Map and prerequisites.</p>
+                        </div>
+                        <div style="display: flex; gap: 8px;">
+                            <button class="btn" onclick="addNewTranscriptRow()">+ Add Course</button>
+                            <button class="btn-secondary" onclick="resetTranscriptData()">Reset Defaults</button>
+                        </div>
+                    </div>
+
+                    <table class="audit-table transcript-edit-table">
+                        <thead>
+                            <tr>
+                                <th style="width: 15%;">Course Code</th>
+                                <th style="width: 25%;">Course Title</th>
+                                <th style="width: 18%;">Term</th>
+                                <th style="width: 10%;">Credits</th>
+                                <th style="width: 10%;">Grade</th>
+                                <th style="width: 14%;">Status</th>
+                                <th style="width: 8%; text-align: center;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="transcript-table-body">
+                            <!-- Dynamically generated course rows -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- RIGHT SIDE: AI ADVISOR ASSISTANT CHAT -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    AI Advisor Assistant
+                </div>
+
+                <div class="chat-prompts">
+                    <button onclick="sendQuickMessage('What should I take next semester?')">What should I take next?</button>
+                    <button onclick="sendQuickMessage('Check my graduation requirements')">Check graduation status</button>
+                </div>
+
+                <div class="chat-log" id="chat-log">
+                    <div class="msg msg-system">
+                        Hello! Transcript parsed successfully. How can I assist with your course planning today?
+                    </div>
+                </div>
+
+                <div class="chat-input-area">
+                    <input type="text" id="chat-input" placeholder="Type a message or question..." onkeypress="handleKeyPress(event)">
+                    <button onclick="sendMessage()">Send</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Course Detail Modal -->
+    <div id="course-modal" class="modal-overlay hidden">
+        <div class="modal-box">
+            <h3 id="modal-code-title">CS 331 - Data Structures</h3>
+            <p><strong>Term:</strong> <span id="modal-term">Fall Year 2</span></p>
+            <p><strong>Credits:</strong> <span id="modal-credits">3</span></p>
+            <p><strong>Status:</strong> <span id="modal-status">Completed</span></p>
+            <p><strong>Prerequisites:</strong> <span id="modal-prereqs">CS 116</span></p>
+            <p style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;">
+                <strong>Description:</strong> <span id="modal-desc">Core data structures, trees, graphs, sorting, and time complexity.</span>
+            </p>
+            <div style="text-align: right; margin-top: 15px;">
+                <button class="btn-secondary" onclick="closeModal()">Close</button>
+            </div>
+        </div>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>
