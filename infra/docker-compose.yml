@@ -37,7 +37,8 @@ services:
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: ssa
     ports:
-      - "5432:5432"
+      # Host 5433, not 5432, so a locally installed Postgres can keep the default port.
+      - "5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
@@ -52,6 +53,8 @@ services:
     restart: unless-stopped
     environment:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
+    ports:
+      - "11434:11434"
     # Serve, then pull the configured model; healthy only once the model is local.
     entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 3 && ollama pull \"$$OLLAMA_MODEL\" && wait"]
     volumes:
