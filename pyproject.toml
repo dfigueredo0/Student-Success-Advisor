@@ -30,11 +30,13 @@ student-success-advisor = "student_success_advisor:main"
 
 [dependency-groups]
 ingest = [
+    "beautifulsoup4>=4.12",
     "pypdf>=5.0",
     "selenium>=4.25",
     "webdriver-manager>=4.0",
 ]
 test = [
+    "beautifulsoup4>=4.12",
     "pytest>=8.3",
     "pytest-timeout>=2.3",
 ]
