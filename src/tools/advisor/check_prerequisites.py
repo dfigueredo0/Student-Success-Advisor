@@ -1,19 +1,14 @@
 """check_prerequisites: completed courses vs. a course's catalog prerequisites."""
 
-from functools import lru_cache
 from typing import Any
 
-from sqlalchemy import Engine, create_engine, text
+from sqlalchemy import text
 
 from domain.graph import unmet_prerequisites
-from settings import get_settings
-
-@lru_cache
-def _engine() -> Engine:
-    return create_engine(get_settings().database_url, pool_pre_ping=True)
+from tools.advisor._db import engine
 
 def check_prerequisites(course: str, completed_courses: list[str]) -> dict[str, Any]:
-    with _engine().connect() as conn:
+    with engine().connect() as conn:
         row = conn.execute(
             text(
                 "SELECT prerequisites, prerequisite_courses, catalog_term "

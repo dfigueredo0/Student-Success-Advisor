@@ -9,6 +9,10 @@ from orchestrator.state import turn_input
 
 router = APIRouter()
 
+# TODO: frontend - the workspace already knows the student's courses (transcript view /
+# sample profiles in frontend/app.js) but only sends the message, so the advisor has to ask.
+# Once get_student_record exists, seed state["profile"] from it here (keyed by the
+# authenticated student) rather than accepting course lists from the client.
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     thread_id: str | None = Field(default=None, max_length=64)
@@ -18,6 +22,9 @@ class ChatResponse(BaseModel):
     answer: str
     citations: list[dict[str, Any]]
     tool_calls: list[dict[str, Any]]
+    # TODO: frontend - state["agent_results"][...] / tool_calls carry structured results
+    # (e.g. recommend_courses' recommendations) the trajectory map could highlight.
+    # TODO: security - returns the full graph state (profile, slots); trim for prod.
     state: dict[str, Any]
     trace_id: str | None
     trace_url: str | None

@@ -284,6 +284,9 @@ function closeModal() {
 /* -------------------------------------------------------------
    7. AI CHATBOT HANDLERS
 ------------------------------------------------------------- */
+// Server-issued on the first reply; sent back so the agent keeps conversation memory.
+let chatThreadId = null;
+
 function handleKeyPress(e) {
     if (e.key === 'Enter') sendMessage();
 }
@@ -301,17 +304,19 @@ async function sendMessage() {
     appendMessage(text, 'user');
     input.value = '';
 
-    setTimeout(() => {
-        let reply = "I checked your course map. ";
-        if (text.toLowerCase().includes('next')) {
-            reply += "Since you completed CS 331, you should take CS 425 (Database Org) next term.";
-        } else if (text.toLowerCase().includes('graduat')) {
-            reply += `You have completed ${currentStudent.credits} of ${currentStudent.totalCredits} required credits. You are on track to graduate on time!`;
-        } else {
-            reply += `Regarding "${text}", let me know if you would like me to adjust your planned schedule.`;
-        }
-        appendMessage(reply, 'system');
-    }, 400);
+    try {
+        const res = await fetch('/chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ message: text, thread_id: chatThreadId }),
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        const data = await res.json();
+        chatThreadId = data.thread_id;
+        appendMessage(data.answer, 'system');
+    } catch (err) {
+        appendMessage(`Advisor unavailable: ${err.message}`, 'system');
+    }
 }
 
 function appendMessage(text, sender) {

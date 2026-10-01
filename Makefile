@@ -5,7 +5,7 @@ COMPOSE       := docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-integration \
-        test-eval test-e2e lint fmt ci ingest-catalog api harness
+        test-eval test-e2e lint fmt ci ingest-catalog api api-debug harness
 
 help: 
 	@uv run python -c "import re; [print(f'  {m[0]:<18} {m[1]}') for m in re.findall(r'^([a-z.-]+):.*?## (.*)$$', open('Makefile').read(), re.M)]"
@@ -50,6 +50,10 @@ test-e2e:
 	$(PYTEST) -m e2e
 
 api:  ## Chat API on :8000 (needs `make up`)
+	uv run uvicorn api.main:app --reload --port 8000
+
+api-debug: export DEBUG=true
+api-debug:  ## Chat API that prints every router/agent/merge step to the terminal
 	uv run uvicorn api.main:app --reload --port 8000
 
 harness:  ## Streamlit debug page for the chat API
