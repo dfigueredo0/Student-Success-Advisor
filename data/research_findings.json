@@ -1,0 +1,184 @@
+{
+  "project": "IPRO 497 — AI Student Success Advisor",
+  "dataset": "AI Advisor Questionnaire: Documented Survey Responses",
+  "survey": {
+    "total_submissions": 35,
+    "question_count": 16,
+    "method": "Student questionnaire",
+    "notes": [
+      "Response counts vary because some questions were optional.",
+      "For select-all-that-apply questions, percentages do not sum to 100%.",
+      "Percentages describe surveyed respondents and should not be generalized to all Illinois Tech students."
+    ]
+  },
+  "respondent_profile": {
+    "class_year": {
+      "n": 35,
+      "fourth_year": {"count": 15, "percent": 42.9},
+      "graduate": {"count": 7, "percent": 20.0},
+      "first_year": {"count": 4, "percent": 11.4},
+      "second_year": {"count": 5, "percent": 14.3},
+      "third_year": {"count": 3, "percent": 8.6},
+      "fifth_year_bachelors": {"count": 1, "percent": 2.9}
+    },
+    "major_question_response_count": 28,
+    "major_note": "Majors were entered as free text with inconsistent spellings and abbreviations; normalization is needed before reliable major-level comparisons."
+  },
+  "findings": [
+    {
+      "id": "F01",
+      "theme": "Current advising experience",
+      "evidence": {
+        "advising_satisfaction": {"n": 34, "mean_out_of_5": 3.21},
+        "ease_of_access": {"n": 35, "neutral_percent": 60.0, "easy_or_very_easy_percent": 25.7},
+        "advising_use_once_per_semester": {"n": 35, "count": 17, "percent": 48.6}
+      },
+      "interpretation": "Reported advising satisfaction was moderate, and relatively few respondents rated access to advising as easy or very easy.",
+    },
+    {
+      "id": "F02",
+      "theme": "Student-reported advising difficulties",
+      "question_type": "multiple_selection",
+      "n": 35,
+      "responses": [
+        {"area": "Career planning", "count": 21, "percent": 60.0},
+        {"area": "Graduation planning", "count": 19, "percent": 54.3},
+        {"area": "Course selection", "count": 18, "percent": 51.4},
+        {"area": "Degree requirements", "count": 15, "percent": 42.9},
+        {"area": "Registration holds", "count": 13, "percent": 37.1},
+        {"area": "Prerequisites", "count": 11, "percent": 31.4},
+        {"area": "Add/drop and related deadlines", "count": 9, "percent": 25.7}
+      ],
+      "interpretation": "Career planning, graduation planning, and course selection were the most frequently selected difficulties within this sample.",
+    },
+    {
+      "id": "F03",
+      "theme": "Uncertainty about upcoming courses",
+      "n": 35,
+      "evidence": {
+        "sometimes": {"count": 12, "percent": 34.3},
+        "often": {"count": 10, "percent": 28.6},
+        "sometimes_or_often": {"count": 22, "percent": 62.9}
+      },
+      "interpretation": "Nearly two-thirds of respondents reported sometimes or often being unsure which courses to take next semester.",
+    },
+    {
+      "id": "F04",
+      "theme": "Behavior when advisors are unavailable",
+      "question_type": "multiple_selection",
+      "n": 35,
+      "responses": [
+        {"action": "Search university website", "count": 25, "percent": 71.4},
+        {"action": "Ask another student", "count": 21, "percent": 60.0},
+        {"action": "Use another online resource", "count": 13, "percent": 37.1},
+        {"action": "Email an advisor", "count": 12, "percent": 34.3},
+        {"action": "Wait for an appointment", "count": 5, "percent": 14.3}
+      ],
+      "interpretation": "Respondents most often reported searching the university website or asking other students when immediate advisor help was unavailable.",
+    },
+    {
+      "id": "F05",
+      "theme": "Perceived value of AI advising",
+      "n": 35,
+      "evidence": {
+        "importance_mean_out_of_5": 4.40,
+        "importance_rating_4_or_5": {"count": 30, "percent": 85.7},
+        "comfort_mean_out_of_5": 4.23,
+        "comfort_rating_4_or_5": {"count": 29, "percent": 82.9}
+      },
+      "interpretation": "Most respondents rated the potential importance of, and their comfort with, AI advising highly.",
+    },
+    {
+      "id": "F06",
+      "theme": "Desired AI features",
+      "question_type": "multiple_selection",
+      "n": 35,
+      "responses": [
+        {"feature": "Course planning", "count": 31, "percent": 88.6},
+        {"feature": "Graduation progress tracking", "count": 27, "percent": 77.1},
+        {"feature": "Career recommendations", "count": 25, "percent": 71.4},
+        {"feature": "Deadline information", "count": 23, "percent": 65.7},
+        {"feature": "Skill-gap recommendations", "count": 23, "percent": 65.7},
+        {"feature": "Prerequisite checking", "count": 22, "percent": 62.9},
+        {"feature": "Research/campus opportunity recommendations", "count": 20, "percent": 57.1},
+        {"feature": "Registration hold assistance", "count": 18, "percent": 51.4}
+      ],
+      "interpretation": "Course planning, graduation progress tracking, and career recommendations received the most selections in the feature question.",
+    },
+    {
+      "id": "F07",
+      "theme": "Human-advisor preference",
+      "question_type": "multiple_selection",
+      "n": 34,
+      "responses": [
+        {"situation": "Personal or sensitive situations", "count": 25, "percent": 73.5},
+        {"situation": "Final course schedule approval", "count": 12, "percent": 35.3},
+        {"situation": "Academic difficulties", "count": 12, "percent": 35.3},
+        {"situation": "Registration problems", "count": 11, "percent": 32.4},
+        {"situation": "Comfortable using AI for most advising tasks", "count": 7, "percent": 20.6}
+      ],
+      "interpretation": "Most selected a human advisor for personal or sensitive situations; some also selected high-impact academic and registration decisions.",
+    },
+    {
+      "id": "F08",
+      "theme": "Data-sharing comfort and privacy",
+      "question_type": "multiple_selection_and_rating",
+      "n": 35,
+      "responses": [
+        {"data": "Completed courses", "count": 34, "percent": 97.1},
+        {"data": "Current courses", "count": 34, "percent": 97.1},
+        {"data": "Major/minor", "count": 33, "percent": 94.3},
+        {"data": "Career interests", "count": 31, "percent": 88.6},
+        {"data": "Grades/GPA", "count": 30, "percent": 85.7},
+        {"data": "Degree progress", "count": 29, "percent": 82.9},
+        {"data": "Resume", "count": 27, "percent": 77.1},
+        {"data": "Academic holds", "count": 26, "percent": 74.3},
+        {"data": "Would not want any personal information accessed", "count": 1, "percent": 2.9}
+      ],
+      "privacy_concern": {"mean_out_of_5": 2.94, "highest_concern_rating_count": 7, "highest_concern_rating_percent": 20.0},
+      "interpretation": "Many respondents indicated willingness to share student information for personalization, but privacy concern varied and some reported the highest concern rating.",
+    },
+    {
+      "id": "F09",
+      "theme": "Transparency and evidence",
+      "n": 35,
+      "evidence": {
+        "importance_of_explaining_sources_mean_out_of_5": 4.46,
+        "rating_4_or_5": {"count": 32, "percent": 91.4}
+      },
+      "interpretation": "Source explanations were rated important by most respondents.",
+    },
+    {
+      "id": "F10",
+      "theme": "Open-ended improvement suggestions",
+      "n": 12,
+      "qualitative_themes": [
+        "Faster and easier access to advising help",
+        "Clearer information and advice before advisor meetings",
+        "Earlier and more detailed career guidance",
+        "AI working alongside human academic advisors",
+        "Flexible support and access",
+        "Requests for clearer wording of what academic advising means in the survey"
+      ],
+      "interpretation": "These themes reflect a small, optional set of comments and were not counted as prevalence estimates.",
+    }
+  ],
+  "research_limitations": [
+    "Thirty-five submissions comprise a small, nonrepresentative convenience sample; recruitment method and response rate were not documented in the survey PDF.",
+    "Fourth-year students (42.9%) and graduate students (20.0%) are prominent in the sample, so results should not automatically represent other class years.",
+    "Free-text major labels contain duplicates/variants and need normalization before major-by-major analysis.",
+    "Only 12 respondents answered the open-ended improvement question.",
+    "Some survey questions were optional, and multi-select percentages cannot be added together.",
+    "Stated perceived usefulness or comfort does not prove actual usage, safety, or technical feasibility."
+  ],
+  "next_research_actions": [
+    "Discuss reported career-planning, graduation-planning, and course-selection difficulties with advisors across departments.",
+    "Ask advisors which frequent student questions can be answered reliably from official sources and which require human judgment.",
+    "Investigate exceptions, outdated data, catalog-year variation, and escalation rules.",
+    "Use interviews to corroborate or challenge student survey findings before proposing development priorities."
+  ],
+  "privacy": {
+    "contents": "Aggregated questionnaire results and analyst interpretations only; no student-identifying information.",
+    "public_repo_note": "Confirm the public release of aggregated research findings is allowed by your project/instructor before committing."
+  }
+}
