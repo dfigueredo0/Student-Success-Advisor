@@ -5,7 +5,7 @@ COMPOSE       := docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-integration \
-        test-eval test-e2e lint fmt ci
+        test-eval test-e2e lint fmt ci ingest-catalog api harness
 
 help: 
 	@uv run python -c "import re; [print(f'  {m[0]:<18} {m[1]}') for m in re.findall(r'^([a-z.-]+):.*?## (.*)$$', open('Makefile').read(), re.M)]"
@@ -48,6 +48,16 @@ test-eval:
 
 test-e2e: 
 	$(PYTEST) -m e2e
+
+api:  ## Chat API on :8000 (needs `make up`)
+	uv run uvicorn api.main:app --reload --port 8000
+
+harness:  ## Streamlit debug page for the chat API
+	uv run --group harness streamlit run frontend/harness/app.py
+
+ingest-catalog:  ## Scrape the IIT Banner catalog + schedule and load it into pgvector (weekly cron)
+	uv run --group ingest python pipelines/ingest/illinoistech_banner_scraper.py
+	uv run python pipelines/ingest/load_catalog.py
 
 lint:
 	uv run ruff check .

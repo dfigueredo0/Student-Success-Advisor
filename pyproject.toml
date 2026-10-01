@@ -15,11 +15,16 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "alembic>=1.14",
+    "fastapi>=0.142.2",
     "httpx>=0.28",
+    "langfuse>=4.16.0",
+    "langgraph>=1.2.12",
+    "langgraph-checkpoint-postgres>=3.1.2",
     "psycopg[binary]>=3.2",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
     "sqlalchemy>=2.0.36",
+    "uvicorn>=0.30",
 ]
 
 [project.urls]
@@ -30,11 +35,13 @@ student-success-advisor = "student_success_advisor:main"
 
 [dependency-groups]
 ingest = [
+    "beautifulsoup4>=4.12",
     "pypdf>=5.0",
     "selenium>=4.25",
     "webdriver-manager>=4.0",
 ]
 test = [
+    "beautifulsoup4>=4.12",
     "pytest>=8.3",
     "pytest-timeout>=2.3",
 ]
@@ -45,6 +52,9 @@ lint = [
 dev = [
     { include-group = "test" },
     { include-group = "lint" },
+]
+harness = [
+    "streamlit>=1.64.0",
 ]
 
 [build-system]
