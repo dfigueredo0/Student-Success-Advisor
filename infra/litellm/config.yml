@@ -19,3 +19,10 @@ litellm_settings:
   # Log every request (successful or not) to Langfuse as an audit trail.
   success_callback: ["langfuse"]
   failure_callback: ["langfuse"]
+
+guardrails:
+    - guardrail_name: prompt-injection
+      litellm_params:
+        guardrail: injection_guard.PromptInjectionGuard
+        mode: pre_call
+        default_on: true
