@@ -15,6 +15,11 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     embedding_model: str = "nomic-embed-text"
 
+    # LiteLLM gateway: the only way the app talks to any AI model.
+    litellm_base_url: str = "http://localhost:4000"
+    litellm_master_key: SecretStr = SecretStr("sk-ssa-dev-master-key")
+    llm_default_model: str = "local-llm"
+
     # Langfuse tracing
     langfuse_host: str = "http://localhost:3000"
     langfuse_public_key: str = "pk-lf-ssa-dev"
