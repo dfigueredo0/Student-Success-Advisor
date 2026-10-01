@@ -37,3 +37,14 @@ def test_langfuse_trace_can_be_written_and_read_back(langfuse: httpx.Client) -> 
             return
         time.sleep(1)
     raise AssertionError(f"trace {trace_id} was accepted but never became readable")
+
+
+def test_litellm_reaches_the_model(litellm: httpx.Client) -> None:
+    # /health actually sends a request to every model in config.yml,
+    # so this proves LiteLLM can reach Ollama, not just that it's running.
+    resp = litellm.get("/health")
+    assert resp.status_code == 200, resp.text
+    body = resp.json()
+    assert body["unhealthy_count"] == 0, body["unhealthy_endpoints"]
+    assert body["healthy_count"] >= 1
+

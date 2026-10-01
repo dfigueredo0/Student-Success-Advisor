@@ -17,3 +17,11 @@ def langfuse(settings: Settings) -> Iterator[httpx.Client]:
     auth = (settings.langfuse_public_key, settings.langfuse_secret_key.get_secret_value())
     with httpx.Client(base_url=settings.langfuse_host, auth=auth, timeout=30) as c:
         yield c
+
+
+@pytest.fixture(scope="session")
+def litellm(settings: Settings) -> Iterator[httpx.Client]:
+    key = settings.litellm_master_key.get_secret_value()
+    headers = {"Authorization": f"Bearer {key}"}
+    with httpx.Client(base_url=settings.litellm_base_url, headers=headers, timeout=60) as c:
+        yield c

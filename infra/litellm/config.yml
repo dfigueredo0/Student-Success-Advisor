@@ -1,0 +1,21 @@
+# LiteLLM gateway: every model call from the app goes through here.
+
+# The app asks for a model by its alias (model_name); LiteLLM decides which
+# real model answers. Swapping models later only means editing this list.
+model_list:
+  - model_name: local-llm
+    litellm_params:
+      model: ollama_chat/qwen2.5:0.5b
+      # Inside Docker, containers reach each other by service name, not localhost.
+      api_base: http://ollama:11434
+
+general_settings:
+  # Secrets come from environment variables, never from this file.
+  master_key: os.environ/LITELLM_MASTER_KEY
+  # LiteLLM's own database, for virtual keys, budgets, and spend logs.
+  database_url: os.environ/LITELLM_DATABASE_URL
+
+litellm_settings:
+  # Log every request (successful or not) to Langfuse as an audit trail.
+  success_callback: ["langfuse"]
+  failure_callback: ["langfuse"]

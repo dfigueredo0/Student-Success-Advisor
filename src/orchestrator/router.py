@@ -143,44 +143,60 @@ class Route:
     source: str
 
 def _classifier_prompt(text: str) -> str:
-    intents = "\n".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items())
-    examples = "\n".join(f"Message: {m}\nIntent: {i}" for m, i in _FEW_SHOT)
+    intents = "
+".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items())
+    examples = "
+".join(f"Message: {m}
+Intent: {i}" for m, i in _FEW_SHOT)
     # TODO: security - `text` is untrusted student input inside the prompt. The JSON schema
     # below pins the output to the intent enum, so injection can at worst misroute.
     return (
-        "You route messages for a university academic advisor. Pick the student's intent.\n"
-        f"{intents}\n- none: anything else\n\n{examples}\n\n"
-        'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.\n\n'
-        f"Message: {text}\nIntent:"
+        "You route messages for a university academic advisor. Pick the student's intent.
+"
+        f"{intents}
+- none: anything else
+
+{examples}
+
+"
+        'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.
+
+'
+        f"Message: {text}
+Intent:"
     )
 
 def ollama_classify(text: str) -> tuple[str | None, float]:
-    """ask the small local model for an intent and a confidence in [0, 1]."""
+    """Ask the model, via the LiteLLM gateway, for an intent and a confidence in [0, 1]."""
     s = get_settings()
+    schema = {
+        "type": "object",
+        "properties": {
+            "intent": {"type": "string", "enum": [*INTENTS, "none"]},
+            "confidence": {"type": "number"},
+        },
+        "required": ["intent", "confidence"],
+    }
     try:
         resp = httpx.post(
-            f"{s.ollama_host}/api/chat",
+            f"{s.litellm_base_url}/v1/chat/completions",
+            headers={"Authorization": f"Bearer {s.litellm_master_key.get_secret_value()}"},
             json={
-                "model": s.ollama_model,
+                "model": s.llm_default_model,
                 "messages": [{"role": "user", "content": _classifier_prompt(text)}],
-                "format": {
-                    "type": "object",
-                    "properties": {
-                        "intent": {"type": "string", "enum": [*INTENTS, "none"]},
-                        "confidence": {"type": "number"},
-                    },
-                    "required": ["intent", "confidence"],
+                "response_format": {
+                    "type": "json_schema",
+                    "json_schema": {"name": "route", "schema": schema},
                 },
-                "stream": False,
-                "options": {"temperature": 0},
+                "temperature": 0,
             },
             timeout=30,
         )
         resp.raise_for_status()
-        out = json.loads(resp.json()["message"]["content"])
+        out = json.loads(resp.json()["choices"][0]["message"]["content"])
         intent, confidence = out["intent"], float(out["confidence"])
-    except (httpx.HTTPError, KeyError, ValueError, TypeError):
-        return None, 0.0  # model unavailable or unparseable -> falls through to clarify
+    except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError):
+        return None, 0.0  # gateway/model unavailable or unparseable -> falls through to clarify
     # switch to logprobs or a trained classifier when eval shows misroutes.
     return (intent if intent in INTENTS else None), max(0.0, min(confidence, 1.0))
 
