@@ -16,6 +16,11 @@ class Settings(BaseSettings):
     ollama_host: str = "http://localhost:11434"
     embedding_model: str = "nomic-embed-text"
 
+    # LiteLLM gateway: the only way the app talks to any AI model.
+    litellm_base_url: str = "http://localhost:4000"
+    litellm_master_key: SecretStr = SecretStr("sk-ssa-dev-master-key")
+    llm_default_model: str = "local-llm"
+
     # Router: small model for stage 2, and the confidence below which it asks to clarify
     ollama_model: str = "qwen2.5:0.5b"
     router_confidence_threshold: float = 0.6
