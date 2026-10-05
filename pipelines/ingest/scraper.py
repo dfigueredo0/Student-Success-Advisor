@@ -6,15 +6,18 @@ import subprocess
 import time
 from pathlib import Path
 from urllib.parse import parse_qs, urljoin, urlparse
+from concurrent.futures import ThreadPoolExecutor
 
 from bs4 import BeautifulSoup
+
+from prereq_parser import parse_prerequisites
 
 
 BASE_URL = "https://ssb.iit.edu"
 COURSE_LIST_URL = BASE_URL + "/bnrprd/bwckctlg.p_display_courses"
 
 OUTPUT_DIR = Path("data/catalog")
-OUTPUT_DIR.mkdir(exist_ok=True)
+OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
 TERMS = [
     ("Spring 2020", "202020"),
@@ -45,16 +48,22 @@ SUBJECTS = [
     "TECH", "TASI", "UCS",
 ]
 
-REQUEST_DELAY = 0.2
+SUBJECTS = sorted(SUBJECTS)
+
+MAX_WORKERS = 6
+
+MAX_RETRIES = 3
+CONNECT_TIMEOUT = 15
+CURL_TIMEOUT = 90
+PYTHON_TIMEOUT = 95
 
 
 def fetch(url, params=None):
     """
     Fetch a public IIT page using the system curl.
 
-    We use curl because IIT's old Banner server successfully
-    negotiates TLS with the system curl on this machine while
-    Python requests does not.
+    IIT's old Banner server can be slow or intermittently
+    unreachable, so requests are retried several times.
     """
 
     if params:
@@ -64,29 +73,53 @@ def fetch(url, params=None):
         )
         url = f"{url}?{query}"
 
-    result = subprocess.run(
-        [
-            "curl",
-            "--fail",
-            "--silent",
-            "--show-error",
-            "--location",
-            "--user-agent",
-            "Mozilla/5.0 (X11; Linux x86_64; rv:156.0) "
-            "Gecko/20100101 Firefox/156.0",
-            url,
-        ],
-        capture_output=True,
-        text=True,
-        timeout=30,
-    )
+    last_error = None
 
-    if result.returncode != 0:
-        raise RuntimeError(
-            f"curl failed for {url}:\n{result.stderr.strip()}"
-        )
+    for attempt in range(1, MAX_RETRIES + 1):
+        try:
+            result = subprocess.run(
+                [
+                    "curl",
+                    "--fail",
+                    "--silent",
+                    "--show-error",
+                    "--location",
+                    "--connect-timeout",
+                    str(CONNECT_TIMEOUT),
+                    "--max-time",
+                    str(CURL_TIMEOUT),
+                    "--user-agent",
+                    "Mozilla/5.0 (X11; Linux x86_64; rv:156.0) "
+                    "Gecko/20100101 Firefox/156.0",
+                    url,
+                ],
+                capture_output=True,
+                text=True,
+                timeout=PYTHON_TIMEOUT,
+            )
 
-    return result.stdout
+            if result.returncode == 0:
+                return result.stdout
+
+            last_error = RuntimeError(
+                f"curl failed for {url}:\n"
+                f"{result.stderr.strip()}"
+            )
+
+        except subprocess.TimeoutExpired as e:
+            last_error = RuntimeError(
+                f"curl timed out after {PYTHON_TIMEOUT} seconds"
+            )
+
+        if attempt < MAX_RETRIES:
+            print(
+                f"  Request failed "
+                f"(attempt {attempt}/{MAX_RETRIES}), "
+                f"retrying..."
+            )
+            time.sleep(2)
+
+    raise last_error
 
 
 def get_courses(term, subject):
@@ -124,8 +157,15 @@ def get_courses(term, subject):
         parsed = urlparse(full_url)
         query = parse_qs(parsed.query)
 
-        subject_code = query.get("subj_code_in", [None])[0]
-        course_number = query.get("crse_numb_in", [None])[0]
+        subject_code = query.get(
+            "subj_code_in",
+            [None],
+        )[0]
+
+        course_number = query.get(
+            "crse_numb_in",
+            [None],
+        )[0]
 
         if not subject_code or not course_number:
             continue
@@ -149,6 +189,41 @@ def get_courses(term, subject):
         })
 
     return courses
+
+
+def course_number_key(course):
+    """
+    Sort course numbers numerically.
+
+    Examples:
+        CS 100
+        CS 101
+        CS 101A
+        CS 200
+        CS 300
+    """
+
+    match = re.match(
+        r"^([A-Z]+)\s+(\d+)([A-Z]*)$",
+        course["id"],
+    )
+
+    if not match:
+        return (
+            course["id"],
+            0,
+            "",
+        )
+
+    subject = match.group(1)
+    number = int(match.group(2))
+    suffix = match.group(3)
+
+    return (
+        subject,
+        number,
+        suffix,
+    )
 
 
 def extract_credits(table):
@@ -177,7 +252,10 @@ def extract_credits(table):
         match.group(1),
     )
 
-    numbers = [float(value) for value in values]
+    numbers = [
+        float(value)
+        for value in values
+    ]
 
     if not numbers:
         return None
@@ -190,7 +268,11 @@ def extract_credits(table):
         }
 
     # "0.000 OR 3.000 Credit hours"
-    nonzero = [n for n in numbers if n > 0]
+    nonzero = [
+        number
+        for number in numbers
+        if number > 0
+    ]
 
     if len(nonzero) == 1:
         return nonzero[0]
@@ -200,11 +282,22 @@ def extract_credits(table):
 
     return 0
 
+
 def extract_prerequisites(table):
+    """
+    Extract and parse the Banner prerequisite section.
+    """
+
     label = None
 
-    for span in table.find_all("span", class_="fieldlabeltext"):
-        text = span.get_text(" ", strip=True)
+    for span in table.find_all(
+        "span",
+        class_="fieldlabeltext",
+    ):
+        text = span.get_text(
+            " ",
+            strip=True,
+        )
 
         if text.rstrip(":").lower() == "prerequisites":
             label = span
@@ -215,8 +308,14 @@ def extract_prerequisites(table):
 
     general = None
 
-    for span in label.find_all_next("span", class_="fieldlabeltext"):
-        text = span.get_text(" ", strip=True)
+    for span in label.find_all_next(
+        "span",
+        class_="fieldlabeltext",
+    ):
+        text = span.get_text(
+            " ",
+            strip=True,
+        )
 
         if text.rstrip(":").lower() == "general requirements":
             general = span
@@ -225,68 +324,65 @@ def extract_prerequisites(table):
     if general is None:
         return None
 
-    raw_text = general.parent.get_text(" ", strip=True)
-
-    pattern = re.compile(
-        r"Course or Test:\s*"
-        r"([A-Z][A-Z0-9]*)\s+"
-        r"(\d+)"
-        r"\s+"
-        r"Minimum Grade of\s+"
-        r"([A-Z][+-]?)"
-        r"\s+"
-        r"(May not be taken concurrently|May be taken concurrently)",
-        re.IGNORECASE,
+    raw_text = general.parent.get_text(
+        " ",
+        strip=True,
     )
 
-    requirements = []
-
-    for match in pattern.finditer(raw_text):
-        subject = match.group(1).upper()
-        number = match.group(2)
-        minimum_grade = match.group(3).upper()
-        concurrent = "May be taken concurrently" in match.group(4)
-
-        requirements.append({
-            "course": f"{subject} {number}",
-            "minimum_grade": minimum_grade,
-            "concurrent": concurrent,
-        })
+    parsed = parse_prerequisites(raw_text)
 
     return {
         "raw": raw_text,
-        "requirements": requirements,
+        "expression": parsed["expression"],
+        "tree": parsed["tree"],
+        "unparsed_count": parsed["unparsed_count"],
     }
 
 
 def get_course_details(course):
     """
     Fetch and parse one public course-detail page.
+
+    Returns:
+        {
+            "id": ...,
+            "title": ...,
+            "credits": ...,
+            "prerequisites": ...
+        }
+
+    Raises:
+        RuntimeError with the course ID attached.
     """
 
-    html = fetch(course["url"])
+    try:
+        html = fetch(course["url"])
 
-    soup = BeautifulSoup(
-        html,
-        "html.parser",
-    )
-
-    table = soup.select_one(
-        'table.datadisplaytable[summary*="course detail"]'
-    )
-
-    if not table:
-        raise RuntimeError(
-            f"Could not find course detail table "
-            f"for {course['id']}"
+        soup = BeautifulSoup(
+            html,
+            "html.parser",
         )
 
-    return {
-        "id": course["id"],
-        "title": course["title"],
-        "credits": extract_credits(table),
-        "prerequisites": extract_prerequisites(table),
-    }
+        table = soup.select_one(
+            'table.datadisplaytable[summary*="course detail"]'
+        )
+
+        if not table:
+            raise RuntimeError(
+                "Could not find course detail table"
+            )
+
+        return {
+            "id": course["id"],
+            "title": course["title"],
+            "credits": extract_credits(table),
+            "prerequisites": extract_prerequisites(table),
+        }
+
+    except Exception as e:
+        raise RuntimeError(
+            f"{course['id']}: {e}"
+        ) from e
 
 
 def scrape_term(semester, term):
@@ -297,6 +393,10 @@ def scrape_term(semester, term):
 
     courses = []
     seen_courses = set()
+
+    # ---------------------------------------------------------
+    # 1. Get the course list for every subject
+    # ---------------------------------------------------------
 
     for subject_index, subject in enumerate(
         SUBJECTS,
@@ -321,40 +421,71 @@ def scrape_term(semester, term):
             print("  No courses")
             continue
 
+        subject_courses.sort(
+            key=course_number_key
+        )
+
         print(
             f"  Found {len(subject_courses)} courses"
         )
 
-        for course_index, course in enumerate(
-            subject_courses,
-            1,
-        ):
+        for course in subject_courses:
             if course["id"] in seen_courses:
                 continue
 
             seen_courses.add(course["id"])
+            courses.append(course)
+
+    # ---------------------------------------------------------
+    # 2. Make absolutely sure final course order is:
+    #    subject alphabetically, then course number
+    # ---------------------------------------------------------
+
+    courses.sort(
+        key=course_number_key
+    )
+
+    print()
+    print(
+        f"Total unique courses: {len(courses)}"
+    )
+
+    # ---------------------------------------------------------
+    # 3. Fetch course details concurrently
+    # ---------------------------------------------------------
+
+    details = []
+    failures = []
+
+    with ThreadPoolExecutor(
+        max_workers=MAX_WORKERS
+    ) as executor:
+
+        results = executor.map(
+            get_course_details,
+            courses,
+        )
+
+        for index, (course, result) in enumerate(
+            zip(courses, results),
+            1,
+        ):
+            details.append(result)
 
             print(
-                f"    [{course_index}/{len(subject_courses)}] "
-                f"{course['id']}"
+                f"[{index}/{len(courses)}] "
+                f"{result['id']}"
             )
 
-            try:
-                details = get_course_details(course)
-                courses.append(details)
-
-            except Exception as e:
-                print(
-                    f"      ERROR: {e}"
-                )
-
-            time.sleep(REQUEST_DELAY)
+    # ---------------------------------------------------------
+    # 4. Save results
+    # ---------------------------------------------------------
 
     output = {
         "semester": semester,
         "term": term,
-        "course_count": len(courses),
-        "courses": courses,
+        "course_count": len(details),
+        "courses": details,
     }
 
     filename = (
@@ -379,7 +510,7 @@ def scrape_term(semester, term):
 
     print()
     print(
-        f"Saved {len(courses)} courses to "
+        f"Saved {len(details)} courses to "
         f"{output_path}"
     )
 
