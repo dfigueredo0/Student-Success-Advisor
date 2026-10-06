@@ -69,7 +69,7 @@ services:
   litellm:
     image: ghcr.io/berriai/litellm@sha256:df15400b5b80925c45d3fd53f8f7a6c0eaa8a25a86833e1b358002e129018943
     restart: unless-stopped
-    command: ["--config", "/app/config.yaml", "--port", "4000"]
+    command: ["--config", "/app/gateway/config.yml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ssa-dev-master-key}
       LITELLM_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/litellm
@@ -79,7 +79,7 @@ services:
     ports:
       - "4000:4000"
     volumes:
-      - ./litellm/config.yml:/app/config.yaml:ro
+      - ./litellm:/app/gateway:ro
     depends_on:
       postgres:
         condition: service_healthy
