@@ -5,7 +5,7 @@ COMPOSE       := docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-integration \
-        test-eval test-e2e lint fmt ci ingest-catalog api api-debug harness
+        test-eval test-e2e lint fmt ci ingest-catalog api api-debug harness keys
 
 help: 
 	@uv run python -c "import re; [print(f'  {m[0]:<18} {m[1]}') for m in re.findall(r'^([a-z.-]+):.*?## (.*)$$', open('Makefile').read(), re.M)]"
@@ -19,6 +19,10 @@ install:
 up: .env 
 	$(COMPOSE) up -d --wait --wait-timeout 900
 	$(MAKE) migrate
+	$(MAKE) keys
+
+keys:  ## Create or update the gateway's per-agent API keys
+	uv run python infra/litellm/seed_keys.py
 
 down: 
 	$(COMPOSE) down
