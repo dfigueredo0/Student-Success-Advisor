@@ -142,28 +142,17 @@ class Route:
     confidence: float
     source: str
 
+
 def _classifier_prompt(text: str) -> str:
-    intents = "
-".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items())
-    examples = "
-".join(f"Message: {m}
-Intent: {i}" for m, i in _FEW_SHOT)
+    intents = "\n".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items())
+    examples = "\n".join(f"Message: {m}\nIntent: {i}" for m, i in _FEW_SHOT)
     # TODO: security - `text` is untrusted student input inside the prompt. The JSON schema
     # below pins the output to the intent enum, so injection can at worst misroute.
     return (
-        "You route messages for a university academic advisor. Pick the student's intent.
-"
-        f"{intents}
-- none: anything else
-
-{examples}
-
-"
-        'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.
-
-'
-        f"Message: {text}
-Intent:"
+        "You route messages for a university academic advisor. Pick the student's intent.\n"
+        f"{intents}\n- none: anything else\n\n{examples}\n\n"
+        'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.\n\n'
+        f"Message: {text}\nIntent:"
     )
 
 def ollama_classify(text: str) -> tuple[str | None, float]:
