@@ -15,7 +15,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agents.base import Agent
 from agents.college_advisor import CollegeAdvisor
 from orchestrator.merge import merge
-from orchestrator.router import Classifier, ollama_classify, route
+from orchestrator.router import Classifier, ollama_classify, regex_route, route
 from orchestrator.state import State
 
 def build_graph(
@@ -27,12 +27,17 @@ def build_graph(
     by_name = {a.name: a for a in (agents or [CollegeAdvisor()])}
 
     def router_node(state: State) -> dict[str, Any]:
-        # no way to change topic mid-scaffold; re-route on a confident
-        # regex hit for a different intent once there is more than one intent.
+        text = state["messages"][-1]["content"]
         if state.get("pending_field") and state.get("route") in by_name:
-            return {}
-        r = route(state["messages"][-1]["content"], classify)
-        return {
+            # Mid-scaffold the message is usually the answer to the agent's question; only a
+            # strong regex hit for a different intent means the student changed topic.
+            r = regex_route(text, strong_only=True)
+            if r is None or r.intent == state.get("intent") or r.agent not in by_name:
+                return {}
+            reset: dict[str, Any] = {"slots": {}, "pending_field": None}
+        else:
+            r, reset = route(text, classify), {}
+        return reset | {
             "intent": r.intent,
             "route": r.agent,
             "confidence": r.confidence,
@@ -46,12 +51,14 @@ def build_graph(
                 state["messages"][-1]["content"],
                 state.get("slots") or {},
                 state.get("pending_field"),
+                state.get("profile") or {},
             )
             return {
                 "agent_results": [result],
                 "slots": result["slots"],
                 "pending_field": result["pending_field"],
                 "tool_calls": result["tool_calls"],
+                "profile": result["profile"],
             }
 
         return observe(name=agent.name, as_type="agent")(node)

@@ -13,6 +13,11 @@ class State(TypedDict, total=False):
     # Scaffold progress
     slots: dict[str, Any]
     pending_field: str | None
+    # What the student has told us (completed_courses, subject, ...); kept for the whole thread
+    # so it is asked once. Self-reported, so untrusted.
+    # TODO: needs impl - seed from tools.advisor.get_student_record once api.auth gives a
+    # student_id (and from parse_transcript on upload), instead of asking in chat.
+    profile: dict[str, Any]
     # Per-turn outputs, reset by `turn_input`
     agent_results: list[dict[str, Any]]
     tool_calls: list[dict[str, Any]]

@@ -52,7 +52,7 @@ services:
     image: ollama/ollama:latest
     restart: unless-stopped
     environment:
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen2.5:0.5b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
     ports:
       - "11434:11434"
     # Serve, then pull the configured model; healthy only once the model is local.
