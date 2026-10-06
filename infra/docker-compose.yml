@@ -38,7 +38,7 @@ services:
       POSTGRES_DB: ssa
     ports:
       # Host 5433, not 5432, so a locally installed Postgres can keep the default port.
-      - "5433:5432"
+      - "127.0.0.1:5433:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
       - ./postgres/init.sql:/docker-entrypoint-initdb.d/00-init.sql:ro
@@ -54,7 +54,7 @@ services:
     environment:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
     ports:
-      - "11434:11434"
+      - "127.0.0.1:11434:11434"
     # Serve, then pull the configured model; healthy only once the model is local.
     entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 3 && ollama pull \"$$OLLAMA_MODEL\" && wait"]
     volumes:
@@ -77,7 +77,7 @@ services:
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
     ports:
-      - "4000:4000"
+      - "127.0.0.1:4000:4000"
     volumes:
       - ./litellm:/app/gateway:ro
     depends_on:
@@ -178,7 +178,7 @@ services:
       LANGFUSE_INIT_USER_NAME: dev
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ssa-dev-password}
     ports:
-      - "3000:3000"
+      - "127.0.0.1:3000:3000"
     depends_on:
       <<: *langfuse-deps
       langfuse-worker:
