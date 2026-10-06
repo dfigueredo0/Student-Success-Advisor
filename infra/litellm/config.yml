@@ -21,8 +21,14 @@ litellm_settings:
   failure_callback: ["langfuse"]
 
 guardrails:
-    - guardrail_name: prompt-injection
-      litellm_params:
-        guardrail: injection_guard.PromptInjectionGuard
-        mode: pre_call
-        default_on: true
+  - guardrail_name: prompt-injection
+    litellm_params:
+      guardrail: injection_guard.PromptInjectionGuard
+      mode: pre_call
+      default_on: true
+
+  - guardrail_name: output-check
+    litellm_params:
+      guardrail: output_guard.OutputGuard
+      mode: [pre_call, post_call]
+      default_on: true
