@@ -5,7 +5,7 @@
 model_list:
   - model_name: local-llm
     litellm_params:
-      model: ollama_chat/qwen2.5:0.5b
+      model: ollama_chat/qwen3:1.7b
       # Inside Docker, containers reach each other by service name, not localhost.
       api_base: http://ollama:11434
 
