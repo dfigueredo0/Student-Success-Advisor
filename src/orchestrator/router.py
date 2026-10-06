@@ -169,7 +169,7 @@ def ollama_classify(text: str) -> tuple[str | None, float]:
     try:
         resp = httpx.post(
             f"{s.litellm_base_url}/v1/chat/completions",
-            headers={"Authorization": f"Bearer {s.litellm_master_key.get_secret_value()}"},
+            headers={"Authorization": f"Bearer {s.litellm_router_key.get_secret_value()}"},
             json={
                 "model": s.llm_default_model,
                 "messages": [{"role": "user", "content": _classifier_prompt(text)}],
