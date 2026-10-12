@@ -5,8 +5,8 @@ Idempotent, so the weekly cron can rerun it freely:
   * terms and courses are upserted; when several snapshots are loaded, the newest term
     wins for course-level catalog fields
   * a term's sections are replaced by what the snapshot lists (dropped CRNs disappear)
-  * a course is (re)embedded through Ollama only when its content hash changed, so a
-    typical week embeds a handful of courses, not the whole catalog
+  * a course is (re)embedded through the LiteLLM gateway only when its content hash
+    changed, so a typical week embeds a handful of courses, not the whole catalog
 
     uv run python pipelines/ingest/load_catalog.py                       # every snapshot
     uv run python pipelines/ingest/load_catalog.py data/raw/banner/202710.json
@@ -187,25 +187,22 @@ def load_snapshot(conn: Connection, snapshot: CatalogSnapshot, *, newest_term: s
     log.info("%s: %d courses, %d sections", term.name, len(rows), len(sections))
 
 # --------------------------------------------------------------------------
-# Embeddings (Ollama)
+# Embeddings (through the LiteLLM gateway)
 # --------------------------------------------------------------------------
 
-class OllamaEmbedder:
-    def __init__(self, host: str, model: str, timeout: float = 300.0) -> None:
-        self.model = model
-        self._client = httpx.Client(base_url=host, timeout=timeout)
+class GatewayEmbedder:
+    """Embeds text through the LiteLLM gateway with the catalog's limited key."""
 
-    def ensure_model(self) -> None:
-        """Pull the embedding model on first use; the compose stack only pulls the chat model."""
-        tags = self._client.get("/api/tags").raise_for_status().json()
-        names = {m["name"] for m in tags.get("models", [])}
-        if self.model not in names and f"{self.model}:latest" not in names:
-            log.info("pulling embedding model %s", self.model)
-            self._client.post("/api/pull", json={"model": self.model, "stream": False}).raise_for_status()
+    def __init__(self, base_url: str, key: str, model: str, timeout: float = 300.0) -> None:
+        self.model = model
+        self._client = httpx.Client(
+            base_url=base_url, headers={"Authorization": f"Bearer {key}"}, timeout=timeout
+        )
 
     def embed(self, texts: Sequence[str]) -> list[list[float]]:
-        response = self._client.post("/api/embed", json={"model": self.model, "input": list(texts)})
-        return response.raise_for_status().json()["embeddings"]
+        response = self._client.post("/v1/embeddings", json={"model": self.model, "input": list(texts)})
+        data = response.raise_for_status().json()["data"]
+        return [item["embedding"] for item in sorted(data, key=lambda item: item["index"])]
 
     def close(self) -> None:
         self._client.close()
@@ -214,7 +211,7 @@ def _batched(items: Sequence[Any], size: int) -> Iterable[Sequence[Any]]:
     for i in range(0, len(items), size):
         yield items[i : i + size]
 
-def refresh_embeddings(conn: Connection, courses: dict[str, Course], embedder: OllamaEmbedder) -> int:
+def refresh_embeddings(conn: Connection, courses: dict[str, Course], embedder: GatewayEmbedder) -> int:
     # Only embed rows whose stored content came from the snapshots in hand; anything else
     # (e.g. a newer term loaded in an earlier run) is left for the run that has its text.
     stale = [
@@ -224,7 +221,6 @@ def refresh_embeddings(conn: Connection, courses: dict[str, Course], embedder: O
     ]
     if not stale:
         return 0
-    embedder.ensure_model()
     for batch in _batched(stale, EMBED_BATCH):
         vectors = embedder.embed([courses[code].embedding_text() for code in batch])
         conn.execute(
@@ -264,7 +260,11 @@ def run(paths: list[Path], *, embed: bool, settings: Settings) -> None:
             for snapshot in snapshots:
                 load_snapshot(conn, snapshot, newest_term=newest)
         if embed:
-            embedder = OllamaEmbedder(settings.ollama_host, settings.embedding_model)
+            embedder = GatewayEmbedder(
+                settings.litellm_base_url,
+                settings.litellm_catalog_key.get_secret_value(),
+                settings.embedding_model,
+            )
             try:
                 with engine.connect() as conn:
                     count = refresh_embeddings(conn, courses, embedder)
@@ -277,7 +277,7 @@ def run(paths: list[Path], *, embed: bool, settings: Settings) -> None:
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("paths", nargs="*", type=Path, help=f"snapshot files (default: {DEFAULT_SNAPSHOT_DIR}/*.json)")
-    parser.add_argument("--no-embed", action="store_true", help="skip the Ollama embedding step")
+    parser.add_argument("--no-embed", action="store_true", help="skip the embedding step")
     args = parser.parse_args(argv)
 
     logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")

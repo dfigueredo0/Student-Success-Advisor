@@ -3,6 +3,7 @@ import uuid
 from datetime import UTC, datetime
 
 import httpx
+import pytest
 from sqlalchemy import Engine, text
 
 def test_postgres_answers_with_pgvector(engine: Engine) -> None:
@@ -48,3 +49,8 @@ def test_litellm_reaches_the_model(litellm: httpx.Client) -> None:
     assert body["unhealthy_count"] == 0, body["unhealthy_endpoints"]
     assert body["healthy_count"] >= 1
 
+
+def test_ollama_is_only_reachable_through_the_gateway() -> None:
+    # Ollama publishes no port, so nothing outside the compose network can call it directly.
+    with pytest.raises(httpx.ConnectError):
+        httpx.get("http://localhost:11434/api/tags", timeout=5)

@@ -14,8 +14,8 @@ class Settings(BaseSettings):
     # Postgres + pgvector
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/ssa"
 
-    # Ollama embeddings for the course catalog (catalog_course.embedding is vector(768))
-    ollama_host: str = "http://localhost:11434"
+    # Embedding model for the course catalog (catalog_course.embedding is vector(768)),
+    # served through the LiteLLM gateway
     embedding_model: str = "nomic-embed-text"
 
     # LiteLLM gateway: the only way the app talks to any AI model.

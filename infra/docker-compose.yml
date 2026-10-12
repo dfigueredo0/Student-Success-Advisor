@@ -54,8 +54,7 @@ services:
     environment:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
-    ports:
-      - "127.0.0.1:11434:11434"
+    # No published port: only the LiteLLM gateway reaches Ollama, over the compose network.
     # Serve, then pull the chat and embedding models; healthy only once both are local.
     entrypoint: ["/bin/sh", "-c", "ollama serve & sleep 3 && ollama pull \"$$OLLAMA_MODEL\" && ollama pull \"$$EMBEDDING_MODEL\" && wait"]
     volumes:

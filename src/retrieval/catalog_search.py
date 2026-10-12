@@ -1,7 +1,8 @@
 """Semantic course search over catalog_course.embedding (pgvector, cosine distance).
 
-Queries are embedded with the same Ollama model and plain-text format the loader used
-for documents (pipelines/ingest/load_catalog.py), so query and document vectors match.
+Queries are embedded through the LiteLLM gateway with the same model and plain-text
+format the loader used for documents (pipelines/ingest/load_catalog.py), so query and
+document vectors match.
 """
 
 from functools import lru_cache
@@ -19,11 +20,12 @@ def _engine() -> Engine:
 def embed_query(query: str) -> list[float]:
     s = get_settings()
     resp = httpx.post(
-        f"{s.ollama_host}/api/embed",
+        f"{s.litellm_base_url}/v1/embeddings",
+        headers={"Authorization": f"Bearer {s.litellm_catalog_key.get_secret_value()}"},
         json={"model": s.embedding_model, "input": [query]},
         timeout=30,
     )
-    return resp.raise_for_status().json()["embeddings"][0]
+    return resp.raise_for_status().json()["data"][0]["embedding"]
 
 _SEARCH = text(
     """
@@ -37,7 +39,7 @@ _SEARCH = text(
     """
 )
 
-# Fallback when Ollama is down: plain keyword match on title/description.
+# Fallback when the gateway is down or refuses: plain keyword match on title/description.
 _KEYWORD = text(
     """
     SELECT code, title, description, credit_hours, credit_hours_max, prerequisites,
