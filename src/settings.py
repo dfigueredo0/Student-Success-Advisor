@@ -22,6 +22,7 @@ class Settings(BaseSettings):
     litellm_base_url: str = "http://localhost:4000"
     litellm_master_key: SecretStr = SecretStr("sk-ssa-dev-master-key")
     litellm_router_key: SecretStr = SecretStr("sk-ssa-router-dev")
+    litellm_catalog_key: SecretStr = SecretStr("sk-ssa-catalog-dev")
     llm_default_model: str = "local-llm"
 
     # Router: small model for stage 2, and the confidence below which it asks to clarify
