@@ -13,8 +13,8 @@ import httpx
 
 CASES = json.loads((Path(__file__).parent / "injection_cases.json").read_text())
 
-# Baseline measured on 2026-10-13.
-MIN_ATTACKS_BLOCKED = 6
+# Baseline history: 6/15 with patterns only; 9/15 after text normalization (2026-10-13).
+MIN_ATTACKS_BLOCKED = 9
 
 
 def blocked(litellm: httpx.Client, text: str) -> bool:
