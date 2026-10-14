@@ -10,10 +10,12 @@ from tools.advisor._db import engine
 
 BANNER_URL = "https://ssb.iit.edu/bnrprd"
 
+
 def credits(row: Any) -> float | None:
     """Catalog credit hours; Banner stores variable-credit courses as 0 with a max."""
     value = max(float(row["credit_hours"] or 0), float(row["credit_hours_max"] or 0))
     return value or None
+
 
 def meeting_summary(meetings: list[dict[str, Any]]) -> str:
     parts = [
@@ -22,6 +24,7 @@ def meeting_summary(meetings: list[dict[str, Any]]) -> str:
         if m.get("type", "Class") == "Class"
     ]
     return ", ".join(dict.fromkeys(parts)) or "TBA"
+
 
 _COURSE = text(
     """
@@ -42,6 +45,7 @@ _SECTIONS = text(
     ORDER BY s.term_code DESC, s.section
     """
 )
+
 
 def get_course_info(course: str, completed_courses: list[str] | None = None) -> dict[str, Any]:
     with engine().connect() as conn:
@@ -86,6 +90,7 @@ def get_course_info(course: str, completed_courses: list[str] | None = None) -> 
             }
         ],
     }
+
 
 # TODO: needs impl - take the student's level (undergrad/grad) from the student record
 # (tools.advisor.get_student_record) instead of defaulting to undergraduate.

@@ -17,12 +17,15 @@ from pydantic import BaseModel, ConfigDict, Field
 
 COURSE_CODE = re.compile(r"\b([A-Z]{2,4}) (\d{3})\b")
 
+
 class _Model(BaseModel):
     model_config = ConfigDict(extra="forbid")
+
 
 class Term(_Model):
     code: str = Field(pattern=r"^\d{6}$")
     name: str
+
 
 class Meeting(_Model):
     type: str = ""
@@ -32,6 +35,7 @@ class Meeting(_Model):
     date_range: str = ""
     instructor: str = ""
     schedule_type: str = ""
+
 
 class Section(_Model):
     section: str
@@ -64,6 +68,7 @@ class Section(_Model):
                     seen.setdefault(name)
         return list(seen)
 
+
 class Semester(_Model):
     name: str
     code: str
@@ -73,8 +78,9 @@ class Semester(_Model):
     is_offered: bool = False
     prerequisites: str = ""
 
+
 class Course(_Model):
-    name: str 
+    name: str
     subject: str
     number: str
     title: str
@@ -117,6 +123,7 @@ class Course(_Model):
         }
         blob = json.dumps(payload, sort_keys=True, separators=(",", ":"))
         return hashlib.sha256(blob.encode()).hexdigest()
+
 
 class CatalogSnapshot(_Model):
     term: Term

@@ -18,6 +18,7 @@ down_revision: str | None = "0001"
 branch_labels: str | Sequence[str] | None = None
 depends_on: str | Sequence[str] | None = None
 
+
 def upgrade() -> None:
     op.execute(
         """
@@ -99,6 +100,7 @@ def upgrade() -> None:
     op.execute(
         "CREATE INDEX catalog_section_course_idx ON catalog_section (course_code, term_code)"
     )
+
 
 def downgrade() -> None:
     op.execute("DROP TABLE IF EXISTS catalog_section")

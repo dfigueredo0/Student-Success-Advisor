@@ -40,6 +40,7 @@ class Settings(BaseSettings):
             raise ValueError("DEBUG=true is not allowed with ENV=prod")
         return self
 
+
 @lru_cache
 def get_settings() -> Settings:
     return Settings()

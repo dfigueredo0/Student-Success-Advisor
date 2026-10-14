@@ -13,6 +13,7 @@ from langgraph.graph.state import CompiledStateGraph
 
 log = logging.getLogger("ssa.debug")
 
+
 def configure_logging() -> None:
     if log.handlers:  # lifespan can run more than once per process (tests)
         return
@@ -21,6 +22,7 @@ def configure_logging() -> None:
     log.addHandler(handler)
     log.setLevel(logging.DEBUG)
     log.propagate = False
+
 
 class TracedGraph:
     """Drop-in for the compiled graph: invoke() streams the run and logs each node's update."""

@@ -2,6 +2,7 @@
 
 from typing import Any
 
+
 def parse_transcript(content: bytes, filename: str) -> dict[str, Any]:
     """Returns the get_student_record shape (completed/in-progress courses, subject, level)."""
     # TODO: needs impl - transcript parsing (pipelines/ingest/transcript_parser.py has a start).

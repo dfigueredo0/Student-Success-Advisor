@@ -8,6 +8,7 @@ TESTS_DIR = Path(__file__).parent
 
 _DIR_MARKERS = {"unit": "unit", "integration": "integration", "e2e": "e2e"}
 
+
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
     for item in items:
         path = Path(item.fspath)
@@ -22,6 +23,7 @@ def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
 @pytest.fixture(scope="session")
 def settings() -> Settings:
     return get_settings()
+
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
     # Suites for later phases (eval, e2e) are wired into CI before they have

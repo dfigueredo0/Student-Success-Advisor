@@ -9,6 +9,7 @@ from orchestrator.state import turn_input
 
 router = APIRouter()
 
+
 # TODO: frontend - the workspace already knows the student's courses (transcript view /
 # sample profiles in frontend/app.js) but only sends the message, so the advisor has to ask.
 # Once get_student_record exists, seed state["profile"] from it here (keyed by the
@@ -16,6 +17,7 @@ router = APIRouter()
 class ChatRequest(BaseModel):
     message: str = Field(min_length=1, max_length=4000)
     thread_id: str | None = Field(default=None, max_length=64)
+
 
 class ChatResponse(BaseModel):
     thread_id: str
@@ -28,6 +30,7 @@ class ChatResponse(BaseModel):
     state: dict[str, Any]
     trace_id: str | None
     trace_url: str | None
+
 
 # TODO: needs impl - authenticate the caller (api.auth) and bind thread_id to the
 # student; until then anyone who knows a thread_id can continue that conversation.

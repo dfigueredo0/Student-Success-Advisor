@@ -13,6 +13,7 @@ from settings import get_settings
 
 FRONTEND_DIR = Path(__file__).resolve().parents[2] / "frontend"
 
+
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     s = get_settings()
@@ -33,6 +34,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
             app.state.graph = debug.TracedGraph(app.state.graph)
         yield
     langfuse.flush()
+
 
 app = FastAPI(title="Student Success Advisor", lifespan=lifespan)
 app.include_router(chat.router)

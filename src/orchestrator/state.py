@@ -3,6 +3,7 @@
 import operator
 from typing import Annotated, Any, TypedDict
 
+
 class State(TypedDict, total=False):
     messages: Annotated[list[dict[str, str]], operator.add]  # {"role", "content"}
     # Routing (kept across turns so a half-filled scaffold resumes with the same agent)
@@ -23,6 +24,7 @@ class State(TypedDict, total=False):
     tool_calls: list[dict[str, Any]]
     answer: str
     citations: list[dict[str, Any]]
+
 
 def turn_input(message: str) -> State:
     """Graph input for one user turn: appends the message, clears last turn's outputs."""

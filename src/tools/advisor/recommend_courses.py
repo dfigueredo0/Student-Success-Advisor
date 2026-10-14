@@ -45,9 +45,11 @@ _CANDIDATES = text(
     """
 )
 
+
 def _number(code_number: str) -> int:
     digits = "".join(ch for ch in code_number if ch.isdigit())
     return int(digits) if digits else 0
+
 
 def _interleave(ranked: list[dict[str, Any]], limit: int) -> list[dict[str, Any]]:
     by_subject: dict[str, list[dict[str, Any]]] = {}
@@ -59,6 +61,7 @@ def _interleave(ranked: list[dict[str, Any]], limit: int) -> list[dict[str, Any]
             if queue and len(out) < limit:
                 out.append(queue.pop(0))
     return out
+
 
 # TODO: needs impl - put required courses first once tools.advisor.get_degree_progress returns
 # the student's remaining requirements, and take level/major from get_student_record.
@@ -79,17 +82,25 @@ def recommend_courses(
         wanted = [subject.upper()] if subject else []
         wanted += [s for s, _ in Counter(c.split()[0] for c in completed).most_common()]
         subjects = [
-            r[0]
-            for r in conn.execute(_SUBJECTS, {"subjects": list(dict.fromkeys(wanted))})
+            r[0] for r in conn.execute(_SUBJECTS, {"subjects": list(dict.fromkeys(wanted))})
         ]
         subjects.sort(key=wanted.index)
         if not subjects:
             return {"found": False, "reason": "no_subject", "citations": []}
 
-        rows = conn.execute(
-            _CANDIDATES,
-            {"term": chosen["code"], "subjects": subjects, "level": level, "completed": completed},
-        ).mappings().all()
+        rows = (
+            conn.execute(
+                _CANDIDATES,
+                {
+                    "term": chosen["code"],
+                    "subjects": subjects,
+                    "level": level,
+                    "completed": completed,
+                },
+            )
+            .mappings()
+            .all()
+        )
 
     # Highest completed course number per subject: skip intro courses below it.
     done_level: dict[str, int] = {}

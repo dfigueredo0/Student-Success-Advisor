@@ -36,8 +36,10 @@ COURSE = {
     },
 }
 
+
 def course(**overrides: object) -> Course:
     return Course.model_validate(COURSE | overrides)
+
 
 def test_prerequisite_courses_in_order() -> None:
     assert course().prerequisite_courses == [
@@ -49,8 +51,10 @@ def test_prerequisite_courses_in_order() -> None:
         "CS 403",
     ]
 
+
 def test_section_instructors_deduplicated() -> None:
     assert course().semester.sections[0].instructors == ["Gerald N. Balekaki"]
+
 
 def test_embedding_text_has_catalog_facts_only() -> None:
     text = course().embedding_text()
@@ -58,15 +62,18 @@ def test_embedding_text_has_catalog_facts_only() -> None:
     assert "Prerequisites: CS 351" in text
     assert "32" not in text  # seat counts change weekly and must not force re-embedding
 
+
 def test_content_hash_ignores_seats_but_tracks_catalog() -> None:
     base = course()
     busier = course(semester=COURSE["semester"] | {"sections": []})
     assert base.content_hash() == busier.content_hash()
     assert base.content_hash() != course(description="Rewritten.").content_hash()
 
+
 def test_unknown_fields_rejected() -> None:
     with pytest.raises(ValidationError):
         course(unexpected=True)
+
 
 def test_snapshot_term_code_validated() -> None:
     with pytest.raises(ValidationError):

@@ -5,6 +5,7 @@ from typing import Any
 from orchestrator.router import CLARIFY_QUESTION
 from orchestrator.state import State
 
+
 def merge(state: State) -> dict[str, Any]:
     results = state.get("agent_results") or []
     if results:

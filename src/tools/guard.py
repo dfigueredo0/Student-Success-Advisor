@@ -5,6 +5,7 @@ from typing import Any
 
 from langfuse import get_client
 
+
 def call_tool(tool: Callable[..., dict[str, Any]], **args: Any) -> dict[str, Any]:
     # TODO: needs impl - argument validation and per-student authorization (RLS)
     # belong here once api.auth and schemas.student exist.

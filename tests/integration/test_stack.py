@@ -6,6 +6,7 @@ import httpx
 import pytest
 from sqlalchemy import Engine, text
 
+
 def test_postgres_answers_with_pgvector(engine: Engine) -> None:
     with engine.connect() as conn:
         assert conn.execute(text("select 1")).scalar_one() == 1
@@ -15,6 +16,7 @@ def test_postgres_answers_with_pgvector(engine: Engine) -> None:
         server = conn.execute(text("show server_version_num")).scalar_one()
     assert version is not None, "vector extension is not installed in the app database"
     assert int(server) // 10000 == 16
+
 
 def test_langfuse_trace_can_be_written_and_read_back(langfuse: httpx.Client) -> None:
     trace_id = str(uuid.uuid4())

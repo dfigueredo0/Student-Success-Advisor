@@ -13,9 +13,11 @@ from sqlalchemy import Engine, create_engine, text
 
 from settings import get_settings
 
+
 @lru_cache
 def _engine() -> Engine:
     return create_engine(get_settings().database_url, pool_pre_ping=True)
+
 
 def embed_query(query: str) -> list[float]:
     s = get_settings()
@@ -26,6 +28,7 @@ def embed_query(query: str) -> list[float]:
         timeout=30,
     )
     return resp.raise_for_status().json()["data"][0]["embedding"]
+
 
 _SEARCH = text(
     """
@@ -51,6 +54,7 @@ _KEYWORD = text(
     LIMIT :limit
     """
 )
+
 
 def search_catalog(query: str, limit: int = 5, level: str | None = None) -> list[dict[str, Any]]:
     try:

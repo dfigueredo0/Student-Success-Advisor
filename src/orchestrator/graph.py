@@ -18,6 +18,7 @@ from orchestrator.merge import merge
 from orchestrator.router import Classifier, ollama_classify, regex_route, route
 from orchestrator.state import State
 
+
 def build_graph(
     checkpointer: BaseCheckpointSaver | None = None,
     *,

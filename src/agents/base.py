@@ -14,6 +14,7 @@ from tools.guard import call_tool
 
 log = logging.getLogger("ssa.agents")
 
+
 def _always(slots: dict[str, Any]) -> bool:
     return True
 
@@ -50,7 +51,9 @@ class AgentResult(TypedDict):
     tool_calls: list[dict[str, Any]]
     profile: dict[str, Any]
 
+
 TOOL_FAILED = "Sorry, I couldn't reach the course data just now. Please try again in a moment."
+
 
 class Agent:
     name: str

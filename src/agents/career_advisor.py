@@ -1,13 +1,13 @@
-import re
 from collections.abc import Callable
 from typing import Any
 
 from agents.base import Agent, Field, Scaffold
 
+
 class CareerAdvisor(Agent):
     name = "career_advisor"
 
-    def __init__(self, check: Callable[..., dict[str, Any]] = None) -> None:
+    def __init__(self, check: Callable[..., dict[str, Any]] | None = None):
         self.scaffolds = {
             "career_advice": Scaffold(
                 intent="career_advice",

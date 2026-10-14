@@ -2,6 +2,7 @@
 
 from typing import Any
 
+
 def get_degree_progress(student_id: str | None) -> dict[str, Any]:
     """Remaining degree requirements for one student.
 

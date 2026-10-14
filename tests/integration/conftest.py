@@ -6,11 +6,13 @@ from sqlalchemy import Engine, create_engine
 
 from settings import Settings
 
+
 @pytest.fixture(scope="session")
 def engine(settings: Settings) -> Iterator[Engine]:
     eng = create_engine(settings.database_url, pool_pre_ping=True)
     yield eng
     eng.dispose()
+
 
 @pytest.fixture(scope="session")
 def langfuse(settings: Settings) -> Iterator[httpx.Client]:

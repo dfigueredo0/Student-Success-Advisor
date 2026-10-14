@@ -55,7 +55,7 @@ HELP = (
     '- check whether you meet a course\'s prerequisites ("Can I take CS 450?")\n'
     '- look up a course\'s description, sections and instructors ("Tell me about CS 331")\n'
     '- find courses on a topic ("Any courses on machine learning?")\n\n'
-    'Tell me what you\'ve completed (e.g. "I\'ve taken CS 115 and MATH 151") and I\'ll '
+    "Tell me what you've completed (e.g. \"I've taken CS 115 and MATH 151\") and I'll "
     "remember it for this conversation."
 )
 
@@ -72,12 +72,15 @@ DEGREE_PROGRESS_UNAVAILABLE = (
     "check prerequisites for a specific course."
 )
 
+
 def _codes(text: str) -> list[str]:
     return list(dict.fromkeys(f"{s.upper()} {n}" for s, n in _CODE.findall(text)))
+
 
 def _course(text: str, asked: bool) -> str | None:
     codes = _codes(text)
     return codes[0] if codes else None
+
 
 def _completed(text: str, asked: bool) -> list[str] | None:
     # Only parsed as an answer to our question; unprompted mentions ("I've taken CS 331")
@@ -85,6 +88,7 @@ def _completed(text: str, asked: bool) -> list[str] | None:
     if not asked:
         return None
     return _codes(text) or ([] if _NONE.search(text) else None)
+
 
 def _subject(text: str, asked: bool) -> str | None:
     low = text.lower()
@@ -98,9 +102,11 @@ def _subject(text: str, asked: bool) -> str | None:
         return m.group(1).upper()
     return None
 
+
 def _term(text: str, asked: bool) -> str | None:
     m = _TERM.search(text)
     return f"{m.group(1).title()} {m.group(2).title()}" if m else None
+
 
 def _query(text: str, asked: bool) -> str | None:
     if asked:
@@ -109,22 +115,28 @@ def _query(text: str, asked: bool) -> str | None:
     topic = m.group(1).strip() if m else ""
     return topic if len(topic) > 2 else None
 
+
 def _never(slots: dict[str, Any]) -> bool:
     return False
+
 
 def _no_completed(slots: dict[str, Any]) -> bool:
     return not slots.get("completed_courses")
 
+
 def _absent(text: str, asked: bool) -> None:
     return None
+
 
 def _seats(n: int | None) -> str:
     if n is None:
         return "seats unknown"
     return "full" if n == 0 else f"{n} seat{'s' * (n != 1)} open"
 
+
 def _credits(c: float | None) -> str:
     return f" ({c:g} cr)" if c else ""
+
 
 def _render_eligibility(r: dict[str, Any]) -> str:
     course = r["course"]
@@ -143,6 +155,7 @@ def _render_eligibility(r: dict[str, Any]) -> str:
             f"Not in your completed courses: {', '.join(r['missing'])} [1]."
         )
     return f'{verdict}\n\nCatalog prerequisites: "{r["prerequisites"]}"\n\n{cite}'
+
 
 def _render_course_info(r: dict[str, Any]) -> str:
     course = r["course"]
@@ -175,6 +188,7 @@ def _render_course_info(r: dict[str, Any]) -> str:
     lines.append(f"\n[1] {r['citations'][0]['source']}")
     return "\n".join(lines)
 
+
 def _render_search(r: dict[str, Any]) -> str:
     if not r["results"]:
         return (
@@ -189,6 +203,7 @@ def _render_search(r: dict[str, Any]) -> str:
     lines.append(f'\nAsk "Tell me about {first}" for sections and prerequisites.\n')
     lines += [f"[{i}] {c['source']}" for i, c in enumerate(r["citations"], 1)]
     return "\n".join(lines)
+
 
 def _render_recommendations(r: dict[str, Any]) -> str:
     if not r["found"]:
@@ -234,6 +249,7 @@ def _render_recommendations(r: dict[str, Any]) -> str:
     lines += [f"[{i}] {c['source']}" for i, c in enumerate(r["citations"], 1)]
     return "\n".join(lines)
 
+
 def _render_progress(r: dict[str, Any]) -> str:
     lines = [
         f"{r['program']}: {r['credits_earned']:g} of {r['credits_required']:g} credits earned [1]."
@@ -248,6 +264,7 @@ def _render_progress(r: dict[str, Any]) -> str:
         lines.append(f"- {req['name']}: {status}" + (f" ({todo})" if todo else ""))
     lines.append(f"\n[1] {r['citations'][0]['source']}" if r["citations"] else "")
     return "\n".join(lines).rstrip()
+
 
 class CollegeAdvisor(Agent):
     name = "college_advisor"
@@ -281,9 +298,7 @@ class CollegeAdvisor(Agent):
             "plan_next_term": Scaffold(
                 intent="plan_next_term",
                 fields=(
-                    Field(
-                        "completed_courses", ASK_COMPLETED_FOR_PLAN, _completed, remember=True
-                    ),
+                    Field("completed_courses", ASK_COMPLETED_FOR_PLAN, _completed, remember=True),
                     Field(
                         "subject",
                         "Which subject or major should I plan for? (e.g. CS, MATH)",
@@ -366,6 +381,7 @@ class CollegeAdvisor(Agent):
             'Want suggestions? Ask "What should I take next semester?"',
             profile,
         )
+
 
 def _remember_completed(profile: dict[str, Any], codes: list[str]) -> None:
     if codes:

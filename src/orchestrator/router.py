@@ -126,14 +126,15 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
 
 CLARIFY_QUESTION = (
     "I'm not sure what you need. I can:\n"
-    "- recommend courses for next term (\"What should I take next semester?\")\n"
-    "- check prerequisites (\"Can I take CS 450?\")\n"
-    "- look up a course (\"Tell me about CS 331\")\n"
-    "- find courses on a topic (\"Any courses on machine learning?\")\n"
+    '- recommend courses for next term ("What should I take next semester?")\n'
+    '- check prerequisites ("Can I take CS 450?")\n'
+    '- look up a course ("Tell me about CS 331")\n'
+    '- find courses on a topic ("Any courses on machine learning?")\n'
     "What would you like to do?"
 )
 
 Classifier = Callable[[str], tuple[str | None, float]]
+
 
 @dataclass(frozen=True)
 class Route:
@@ -154,6 +155,7 @@ def _classifier_prompt(text: str) -> str:
         'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.\n\n'
         f"Message: {text}\nIntent:"
     )
+
 
 def ollama_classify(text: str) -> tuple[str | None, float]:
     """Ask the model, via the LiteLLM gateway, for an intent and a confidence in [0, 1]."""
@@ -189,11 +191,13 @@ def ollama_classify(text: str) -> tuple[str | None, float]:
     # switch to logprobs or a trained classifier when eval shows misroutes.
     return (intent if intent in INTENTS else None), max(0.0, min(confidence, 1.0))
 
+
 def regex_route(text: str, *, strong_only: bool = False) -> Route | None:
     for pattern, intent, confidence, strong in _PATTERNS:
         if (strong or not strong_only) and pattern.search(text):
             return Route(intent, INTENTS[intent], confidence, "regex")
     return None
+
 
 def route(
     text: str, classify: Classifier = ollama_classify, threshold: float | None = None

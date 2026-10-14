@@ -7,6 +7,7 @@ from sqlalchemy import text
 from domain.graph import unmet_prerequisites
 from tools.advisor._db import engine
 
+
 def check_prerequisites(course: str, completed_courses: list[str]) -> dict[str, Any]:
     with engine().connect() as conn:
         row = conn.execute(
