@@ -9,6 +9,7 @@ from functools import lru_cache
 from typing import Any
 
 import httpx
+from pydantic import SecretStr
 from sqlalchemy import Engine, create_engine, text
 
 from settings import get_settings
@@ -19,11 +20,13 @@ def _engine() -> Engine:
     return create_engine(get_settings().database_url, pool_pre_ping=True)
 
 
-def embed_query(query: str) -> list[float]:
+def embed_query(query: str, api_key: SecretStr | None = None) -> list[float]:
+    """Embed through the gateway with the caller's key (default: the catalog key)."""
     s = get_settings()
+    key = (api_key or s.litellm_catalog_key).get_secret_value()
     resp = httpx.post(
         f"{s.litellm_base_url}/v1/embeddings",
-        headers={"Authorization": f"Bearer {s.litellm_catalog_key.get_secret_value()}"},
+        headers={"Authorization": f"Bearer {key}"},
         json={"model": s.embedding_model, "input": [query]},
         timeout=30,
     )
@@ -56,9 +59,11 @@ _KEYWORD = text(
 )
 
 
-def search_catalog(query: str, limit: int = 5, level: str | None = None) -> list[dict[str, Any]]:
+def search_catalog(
+    query: str, limit: int = 5, level: str | None = None, api_key: SecretStr | None = None
+) -> list[dict[str, Any]]:
     try:
-        vec = "[" + ",".join(f"{x:.7g}" for x in embed_query(query)) + "]"
+        vec = "[" + ",".join(f"{x:.7g}" for x in embed_query(query, api_key)) + "]"
         stmt, params = _SEARCH, {"vec": vec}
     except (httpx.HTTPError, KeyError, IndexError):
         stmt, params = _KEYWORD, {"pat": f"%{query}%"}

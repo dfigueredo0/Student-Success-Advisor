@@ -57,6 +57,9 @@ def not_connected(**kwargs: Any) -> dict[str, Any]:
     raise NotImplementedError
 
 
+not_connected.__name__ = "get_degree_progress"  # stands in for that tool on the allow-list
+
+
 class Tools:
     def __init__(self) -> None:
         self.check = Recorder(
@@ -214,6 +217,7 @@ def test_tool_failure_returns_friendly_answer() -> None:
     def broken(**kwargs: Any) -> dict[str, Any]:
         raise RuntimeError("db down")
 
+    broken.__name__ = "search_courses"  # an allowed tool that fails, not a refused one
     tools = Tools()
     tools.search = broken  # type: ignore[assignment]
     state = Chat(tools.advisor()).say("Any courses on databases?")

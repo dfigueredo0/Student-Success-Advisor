@@ -7,12 +7,13 @@ Agents never link to each other; every hop goes router -> agent -> merge, and
 from collections.abc import Iterable
 from typing import Any
 
-from langfuse import observe
+from langfuse import get_client, observe
 from langgraph.checkpoint.base import BaseCheckpointSaver
 from langgraph.graph import END, START, StateGraph
 from langgraph.graph.state import CompiledStateGraph
 
 from agents.base import Agent
+from agents.career_advisor import CareerAdvisor
 from agents.college_advisor import CollegeAdvisor
 from orchestrator.merge import merge
 from orchestrator.router import Classifier, ollama_classify, regex_route, route
@@ -25,7 +26,7 @@ def build_graph(
     agents: Iterable[Agent] | None = None,
     classify: Classifier = ollama_classify,
 ) -> CompiledStateGraph:
-    by_name = {a.name: a for a in (agents or [CollegeAdvisor()])}
+    by_name = {a.name: a for a in (agents or [CollegeAdvisor(), CareerAdvisor()])}
 
     def router_node(state: State) -> dict[str, Any]:
         text = state["messages"][-1]["content"]
@@ -38,11 +39,16 @@ def build_graph(
             reset: dict[str, Any] = {"slots": {}, "pending_field": None}
         else:
             r, reset = route(text, classify), {}
+        if r.prompt_version:
+            get_client().update_current_span(
+                version=r.prompt_version, metadata={"prompt_version": r.prompt_version}
+            )
         return reset | {
             "intent": r.intent,
             "route": r.agent,
             "confidence": r.confidence,
             "route_source": r.source,
+            "prompt_version": r.prompt_version,
         }
 
     def agent_node(agent: Agent):

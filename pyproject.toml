@@ -23,6 +23,7 @@ dependencies = [
     "psycopg[binary]>=3.2",
     "pydantic>=2.9",
     "pydantic-settings>=2.6",
+    "pypdf>=5.0",
     "sqlalchemy>=2.0.36",
     "uvicorn>=0.30",
 ]
@@ -36,12 +37,12 @@ student-success-advisor = "student_success_advisor:main"
 [dependency-groups]
 ingest = [
     "beautifulsoup4>=4.12",
-    "pypdf>=5.0",
     "selenium>=4.25",
     "webdriver-manager>=4.0",
 ]
 test = [
     "beautifulsoup4>=4.12",
+    "hypothesis>=6.100",
     "pytest>=8.3",
     "pytest-timeout>=2.3",
 ]
@@ -74,6 +75,7 @@ timeout = 300
 markers = [
     "unit: fast, hermetic tests with no network or containers",
     "integration: needs the docker compose stack (make up)",
+    "agent: LangGraph + scripted FakeLLM; hermetic, no network or containers",
     "eval: model-quality evaluations against the eval harness",
     "e2e: full request path through the API",
     "slow: takes more than a few seconds; excluded from the pre-commit loop",

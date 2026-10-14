@@ -59,3 +59,23 @@ def test_router_key_cannot_embed(router_gateway: httpx.Client, settings: Setting
         "/v1/embeddings", json={"model": settings.embedding_model, "input": ["machine learning"]}
     )
     assert resp.status_code == 403, resp.text
+
+
+@pytest.fixture(scope="module")
+def career_gateway(settings: Settings) -> Iterator[httpx.Client]:
+    key = settings.litellm_career_key.get_secret_value()
+    headers = {"Authorization": f"Bearer {key}"}
+    with httpx.Client(base_url=settings.litellm_base_url, headers=headers, timeout=60) as c:
+        yield c
+
+
+def test_career_key_can_embed(career_gateway: httpx.Client, settings: Settings) -> None:
+    resp = career_gateway.post(
+        "/v1/embeddings", json={"model": settings.embedding_model, "input": ["data science"]}
+    )
+    assert resp.status_code == 200, resp.text
+
+
+def test_career_key_cannot_chat(career_gateway: httpx.Client) -> None:
+    resp = career_gateway.post("/v1/chat/completions", json={"model": "local-llm", **CHAT})
+    assert resp.status_code == 403, resp.text

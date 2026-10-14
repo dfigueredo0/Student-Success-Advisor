@@ -54,7 +54,8 @@ HELP = (
     '- recommend courses for next term ("What should I take next semester?")\n'
     '- check whether you meet a course\'s prerequisites ("Can I take CS 450?")\n'
     '- look up a course\'s description, sections and instructors ("Tell me about CS 331")\n'
-    '- find courses on a topic ("Any courses on machine learning?")\n\n'
+    '- find courses on a topic ("Any courses on machine learning?")\n'
+    '- match courses to career skills ("What skills do I need to become a data scientist?")\n\n'
     "Tell me what you've completed (e.g. \"I've taken CS 115 and MATH 151\") and I'll "
     "remember it for this conversation."
 )
@@ -268,6 +269,15 @@ def _render_progress(r: dict[str, Any]) -> str:
 
 class CollegeAdvisor(Agent):
     name = "college_advisor"
+    allowed_tools = frozenset(
+        {
+            "check_prerequisites",
+            "get_course_info",
+            "search_courses",
+            "recommend_courses",
+            "get_degree_progress",
+        }
+    )
 
     def __init__(
         self,

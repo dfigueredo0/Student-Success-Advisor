@@ -1,0 +1,772 @@
+{
+ "CS 331": {
+  "expression": "CS 116 (min D) OR CS 201 (min D)",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "course",
+     "course": "CS 116",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CS 201",
+     "minimum_grade": "D",
+     "concurrent": false
+    }
+   ]
+  }
+ },
+ "CS 350": {
+  "expression": "CS 116 (min D, concurrent OK) OR CS 201 (min D, concurrent OK)",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "course",
+     "course": "CS 116",
+     "minimum_grade": "D",
+     "concurrent": true
+    },
+    {
+     "type": "course",
+     "course": "CS 201",
+     "minimum_grade": "D",
+     "concurrent": true
+    }
+   ]
+  }
+ },
+ "CS 425": {
+  "expression": "CS 331 (min D) OR CS 401 (min D) OR CSSP 401 (min S) OR CS 403 (min D)",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "course",
+     "course": "CS 331",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CS 401",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CSSP 401",
+     "minimum_grade": "S",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CS 403",
+     "minimum_grade": "D",
+     "concurrent": false
+    }
+   ]
+  }
+ },
+ "ITMD 411": {
+  "expression": "ITM 311 (min D) OR CS 116 (min D) OR (CS 201 (min D) AND ITM 312 (min D)) OR ITM 313 (min D) OR CS 331 (min D)",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "course",
+     "course": "ITM 311",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CS 116",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "and",
+     "children": [
+      {
+       "type": "course",
+       "course": "CS 201",
+       "minimum_grade": "D",
+       "concurrent": false
+      },
+      {
+       "type": "course",
+       "course": "ITM 312",
+       "minimum_grade": "D",
+       "concurrent": false
+      }
+     ]
+    },
+    {
+     "type": "course",
+     "course": "ITM 313",
+     "minimum_grade": "D",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "CS 331",
+     "minimum_grade": "D",
+     "concurrent": false
+    }
+   ]
+  }
+ },
+ "MATH 152": {
+  "expression": "MATH 149 (min C) OR MATH 151 (min C)",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "course",
+     "course": "MATH 149",
+     "minimum_grade": "C",
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "MATH 151",
+     "minimum_grade": "C",
+     "concurrent": false
+    }
+   ]
+  }
+ },
+ "AAH 119": {
+  "expression": "([A0W\n               8\n to \n              12 May not be taken concurrently.] AND [S08\n               9\n to \n              12 May not be taken concurrently.] AND [S11\n             600\n to \n             800 May not be taken concurrently.] AND [S14\n              32\n to \n              40 May not be taken concurrently.] AND [SWR\n               7\n to \n              12 May not be taken concurrently.] AND [S07\n             599\n to \n             800 May not be taken concurrently.] AND [ICOM\n             102\n to \n             106 May not be taken concurrently.] AND [AWR\n               7\n to \n              12 May not be taken concurrently.] AND HUM 100) OR HUM 102 OR HUM 104 OR HUM 106 OR HUM 108 OR HUM 180 OR HUM 200 to 299 OR COM 101 OR COM 111",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "and",
+     "children": [
+      {
+       "type": "unparsed",
+       "text": "A0W\n               8\n to \n              12 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "S08\n               9\n to \n              12 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "S11\n             600\n to \n             800 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "S14\n              32\n to \n              40 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "SWR\n               7\n to \n              12 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "S07\n             599\n to \n             800 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "ICOM\n             102\n to \n             106 May not be taken concurrently."
+      },
+      {
+       "type": "unparsed",
+       "text": "AWR\n               7\n to \n              12 May not be taken concurrently."
+      },
+      {
+       "type": "course",
+       "course": "HUM 100",
+       "minimum_grade": null,
+       "concurrent": false
+      }
+     ]
+    },
+    {
+     "type": "course",
+     "course": "HUM 102",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "HUM 104",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "HUM 106",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "HUM 108",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "HUM 180",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course_range",
+     "subject": "HUM",
+     "start": "200",
+     "end": "299",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "COM 101",
+     "minimum_grade": null,
+     "concurrent": false
+    },
+    {
+     "type": "course",
+     "course": "COM 111",
+     "minimum_grade": null,
+     "concurrent": false
+    }
+   ]
+  }
+ },
+ "INTR 011": {
+  "expression": "[Course] OR [Test: AAH May be taken concurrently.] OR [Course] OR [Test: ARCH May be taken concurrently.] OR [Course] OR [Test: AS May be taken concurrently.] OR [Course] OR [Test: ATR May be taken concurrently.] OR [Course] OR [Test: AURB May be taken concurrently.] OR [Course] OR [Test: BIOL May be taken concurrently.] OR [Course] OR [Test: BME May be taken concurrently.] OR [Course] OR [Test: BUS May be taken concurrently.] OR [Course] OR [Test: CAE May be taken concurrently.] OR [Course] OR [Test: CHE May be taken concurrently.] OR [Course] OR [Test: CHEM May be taken concurrently.] OR [Course] OR [Test: COM May be taken concurrently.] OR [Course] OR [Test: CS May be taken concurrently.] OR [Course] OR [Test: CSP May be taken concurrently.] OR [Course] OR [Test: ECE May be taken concurrently.] OR [Course] OR [Test: ECON May be taken concurrently.] OR [Course] OR [Test: EG May be taken concurrently.] OR [Course] OR [Test: EMGT May be taken concurrently.] OR [Course] OR [Test: EMS May be taken concurrently.] OR [Course] OR [Test: ENGR May be taken concurrently.] OR [Course] OR [Test: ENVE May be taken concurrently.] OR [Course] OR [Test: FDSN May be taken concurrently.] OR [Course] OR [Test: FMC May be taken concurrently.] OR [Course] OR [Test: GLS May be taken concurrently.] OR [Course] OR [Test: HIST May be taken concurrently.] OR [Course] OR [Test: HUM May be taken concurrently.] OR [Course] OR [Test: ID May be taken concurrently.] OR [Course] OR [Test: IDN May be taken concurrently.] OR [Course] OR [Test: IDX May be taken concurrently.] OR [Course] OR [Test: INTM May be taken concurrently.] OR [Course] OR [Test: IPMM May be taken concurrently.] OR [Course] OR [Test: IPRO May be taken concurrently.] OR [Course] OR [Test: ITM May be taken concurrently.] OR [Course] OR [Test: ITMD May be taken concurrently.] OR [Course] OR [Test: ITMM May be taken concurrently.] OR [Course] OR [Test: ITMO May be taken concurrently.] OR [Course] OR [Test: ITMS May be taken concurrently.] OR [Course] OR [Test: ITMT May be taken concurrently.] OR [Course] OR [Test: LA May be taken concurrently.] OR [Course] OR [Test: LAW May be taken concurrently.] OR [Course] OR [Test: LCHS May be taken concurrently.] OR [Course] OR [Test: LIT May be taken concurrently.] OR [Course] OR [Test: MATH May be taken concurrently.] OR [Course] OR [Test: MAX May be taken concurrently.] OR [Course] OR [Test: MBA May be taken concurrently.] OR [Course] OR [Test: MILS May be taken concurrently.] OR [Course] OR [Test: MMAE May be taken concurrently.] OR [Course] OR [Test: MS May be taken concurrently.] OR [Course] OR [Test: MSC May be taken concurrently.] OR [Course] OR [Test: MSED May be taken concurrently.] OR [Course] OR [Test: MSF May be taken concurrently.] OR [Course] OR [Test: NS May be taken concurrently.] OR [Course] OR [Test: PA May be taken concurrently.] OR [Course] OR [Test: PCA May be taken concurrently.] OR [Course] OR [Test: PESL May be taken concurrently.] OR [Course] OR [Test: PHIL May be taken concurrently.] OR [Course] OR [Test: PHYS May be taken concurrently.] OR [Course] OR [Test: PS May be taken concurrently.] OR [Course] OR [Test: PSYC May be taken concurrently.] OR [Course] OR [Test: SCI May be taken concurrently.] OR [Course] OR [Test: SMGT May be taken concurrently.] OR [Course] OR [Test: SOC May be taken concurrently.] OR [Course] OR [Test: SSB May be taken concurrently.] OR [Course] OR [Test: SSCI May be taken concurrently.] OR [Course] OR [Test: TECH May be taken concurrently.]",
+  "tree": {
+   "type": "or",
+   "children": [
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: AAH May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ARCH May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: AS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ATR May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: AURB May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: BIOL May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: BME May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: BUS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: CAE May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: CHE May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: CHEM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: COM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: CS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: CSP May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ECE May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ECON May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: EG May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: EMGT May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: EMS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ENGR May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ENVE May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: FDSN May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: FMC May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: GLS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: HIST May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: HUM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ID May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: IDN May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: IDX May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: INTM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: IPMM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: IPRO May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITMD May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITMM May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITMO May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITMS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: ITMT May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: LA May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: LAW May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: LCHS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: LIT May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MATH May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MAX May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MBA May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MILS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MMAE May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MSC May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MSED May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: MSF May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: NS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PA May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PCA May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PESL May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PHIL May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PHYS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PS May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: PSYC May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: SCI May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: SMGT May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: SOC May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: SSB May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: SSCI May be taken concurrently."
+    },
+    {
+     "type": "unparsed",
+     "text": "Course"
+    },
+    {
+     "type": "unparsed",
+     "text": "Test: TECH May be taken concurrently."
+    }
+   ]
+  }
+ }
+}

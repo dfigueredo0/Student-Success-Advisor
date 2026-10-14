@@ -1,0 +1,23 @@
+STUDENT INFORMATION
+Name Test Q Student Birth Date 01/01/2000
+Student Type Continuing
+Program Bachelor of Science
+Major and Department Computer Science, Computer Science DEGREE AWARDED
+TRANSFER CREDIT ACCEPTED BY INSTITUTION
+Fall 2023 Example Community College
+MATH 151 Calculus I TR 5.000 0.00
+INSTITUTION CREDIT
+Term: Fall 2024
+CS 115 Mies UG Object-Oriented
+Programming I A 2.000 8.00
+CS 116 Mies UG Object-Oriented Programming II D 2.000 2.00
+HUM 200 Mies UG Intro to Humanities W 0.000 0.00
+Term: Spring 2025
+CS 116 Mies UG Object-Oriented Programming II A 2.000 8.00
+CS 331 Internet UG Data Structures and Algorithms C+ 3.000 6.90
+TRANSCRIPT TOTALS
+Total Institution 7.000 22.90
+COURSE(S) IN PROGRESS
+Term: Fall 2025
+CS 350 Mies UG Computer Organization and Assembly 3.000
+CS 351 Mies UG Systems Programming 3.000

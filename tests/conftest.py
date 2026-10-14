@@ -6,7 +6,7 @@ from settings import Settings, get_settings
 
 TESTS_DIR = Path(__file__).parent
 
-_DIR_MARKERS = {"unit": "unit", "integration": "integration", "e2e": "e2e"}
+_DIR_MARKERS = {"unit": "unit", "agent": "agent", "integration": "integration", "e2e": "e2e"}
 
 
 def pytest_collection_modifyitems(items: list[pytest.Item]) -> None:
