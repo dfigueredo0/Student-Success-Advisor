@@ -111,7 +111,7 @@ make lint               # ruff + formatting + import-layer contracts (CI runs th
 make fmt                # auto-fix lint and formatting
 ```
 
-Run `make fmt` and `make lint` before you pushing.
+Run `make fmt` and `make lint` before pushing.
 
 ## Stopping and resetting
 
