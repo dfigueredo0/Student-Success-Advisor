@@ -27,6 +27,9 @@ make api       # chat API + web UI on http://localhost:8000
 service's healthcheck. **The first run takes several minutes** while Ollama downloads the
 chat and embedding models (it waits up to 15 minutes). Later runs start in under a minute.
 
+`.env` is only created once. When `.env.example` gains new lines after a pull, add them to
+your `.env` by hand, or delete `.env` and run `make up` again if you never edited it.
+
 Then open **http://localhost:8000** and ask something like "Tell me about CS 331".
 
 ### Load course data (first time)
@@ -58,6 +61,7 @@ All ports are bound to `localhost` only.
 | Debug harness       | http://localhost:8501      | `make harness` (Streamlit); shows state, tool calls, trace links                 |
 | Langfuse            | http://localhost:3000      | Traces for every request. Login:`dev@ssa.local` / `ssa-dev-password`             |
 | LiteLLM gateway     | http://localhost:4000      | Every model call goes through here; needs a key from`.env`                       |
+| LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_MASTER_KEY`   |
 | Postgres + pgvector | `localhost:5433`           | `postgres` / `postgres`, database `ssa` (5433 so a local Postgres can keep 5432) |
 | Ollama              | not exposed                | Reachable only by the gateway inside the compose network                         |
 
@@ -98,8 +102,50 @@ make harness     # Streamlit debug page (run alongside make api)
 
 - Code lives in top-level packages under `src/` (`agents`, `orchestrator`, `tools`, `domain`, ...).
 - Configuration comes from `.env` (see `.env.example` and `src/settings.py`).
-- Model IDs live only in `infra/litellm/config.yml`; code uses aliases like `local-llm`.
+- Code uses model aliases like `local-llm`, never real model names. To change a model,
+  update `infra/litellm/config.yml` (what the gateway asks Ollama for) **and**
+  `OLLAMA_MODEL` / `EMBEDDING_MODEL` in `.env.example` (what Ollama downloads). If they
+  disagree, every model call fails.
 - Schema changes go through Alembic: add a revision in `db/migrations/versions/`, then `make migrate`.
+
+## AI gateway and keys
+
+Every model call (chat and embeddings) goes through the LiteLLM gateway on port 4000.
+Nothing calls Ollama directly; it has no port outside Docker.
+
+On every request the gateway:
+
+- checks the caller's key (`401` without a valid one)
+- blocks known prompt-injection phrases (`infra/litellm/injection_guard.py`)
+- removes student IDs and student emails from answers, and refuses streaming
+  (`infra/litellm/output_guard.py`)
+- logs the request to Langfuse
+
+Each feature gets its own key that can only do its job, defined in
+`infra/litellm/seed_keys.py` and created by `make up` (or `make keys`):
+
+| Key     | Setting                        | Can do                |
+| ------- | ------------------------------ | --------------------- |
+| router  | `settings.litellm_router_key`  | chat with `local-llm` |
+| catalog | `settings.litellm_catalog_key` | embeddings only       |
+
+The master key (`LITELLM_MASTER_KEY`) is for admin work only (`make keys`, the
+dashboard). Don't use it in app code. If a new feature needs the model, ask Ronal for its
+own key.
+
+To call the gateway from code, use the OpenAI-style API:
+
+```python
+resp = httpx.post(
+    f"{s.litellm_base_url}/v1/chat/completions",
+    headers={"Authorization": f"Bearer {s.litellm_router_key.get_secret_value()}"},
+    json={"model": "local-llm", "messages": messages},
+)
+answer = resp.json()["choices"][0]["message"]["content"]
+```
+
+`src/orchestrator/router.py` (chat) and `src/retrieval/catalog_search.py` (embeddings) are
+working examples.
 
 ## Tests and lint
 
@@ -121,3 +167,6 @@ make clean   # stop and delete all volumes (database, traces, downloaded models)
 make ps      # service status
 make logs    # follow logs
 ```
+
+After `make clean` the database is empty again; reload the catalog (see
+[Load course data](#load-course-data-first-time)).
