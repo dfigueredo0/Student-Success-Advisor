@@ -4,7 +4,7 @@ COMPOSE_FILES ?= -f infra/docker-compose.yml
 COMPOSE       := docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
-.PHONY: help install up down clean ps logs migrate test test-unit test-integration \
+.PHONY: help install up down clean ps logs migrate test test-unit test-agent test-integration \
         test-eval test-e2e lint fmt ci ingest-catalog api api-debug harness keys
 
 help: 
@@ -39,10 +39,13 @@ logs:
 migrate: 
 	uv run alembic upgrade head
 
-test: test-unit test-integration  ## Unit + integration suites (needs `make up`)
+test: test-unit test-agent test-integration  ## Unit + agent + integration suites (needs `make up`)
 
 test-unit: 
 	$(PYTEST) -m unit
+
+test-agent:  ## Agent suite: real graph + scripted FakeLLM, no network
+	$(PYTEST) -m agent
 
 test-integration: 
 	$(PYTEST) -m integration

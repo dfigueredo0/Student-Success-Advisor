@@ -4,10 +4,14 @@ import json
 import re
 from collections.abc import Callable
 from dataclasses import dataclass
+from typing import Any
 
 import httpx
 
+from agents.prompts import load_prompt
 from settings import get_settings
+
+ROUTER_PROMPT = load_prompt("router_intent")
 
 # intent -> agent that owns it
 INTENTS: dict[str, str] = {
@@ -18,6 +22,7 @@ INTENTS: dict[str, str] = {
     "degree_progress": "college_advisor",
     "record_courses": "college_advisor",
     "help": "college_advisor",
+    "career_advice": "career_advisor",
 }
 
 # What the small model sees; keep each line short and contrastive.
@@ -29,6 +34,7 @@ INTENT_DESCRIPTIONS: dict[str, str] = {
     "degree_progress": "asks about graduation, degree requirements, or credits remaining",
     "record_courses": "tells you which courses they have already completed",
     "help": "greets you or asks what you can do",
+    "career_advice": "asks about careers, jobs or internships, or which skills to build for one",
 }
 
 _FEW_SHOT: list[tuple[str, str]] = [
@@ -39,6 +45,7 @@ _FEW_SHOT: list[tuple[str, str]] = [
     ("Am I on track to graduate?", "degree_progress"),
     ("I already passed MATH 151 and CS 115", "record_courses"),
     ("hey, what can you do?", "help"),
+    ("What skills do I need to become a data scientist?", "career_advice"),
     ("Where is the gym?", "none"),
 ]
 
@@ -64,6 +71,16 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
             re.I,
         ),
         "degree_progress",
+        0.9,
+        True,
+    ),
+    (
+        re.compile(
+            r"\bcareers?\b|\b(jobs?|internships?)\b|\bbecome an?\b|\bwork as\b"
+            r"|\bskills?\b.*\b(need|build|learn|develop|for)\b",
+            re.I,
+        ),
+        "career_advice",
         0.9,
         True,
     ),
@@ -130,10 +147,14 @@ CLARIFY_QUESTION = (
     '- check prerequisites ("Can I take CS 450?")\n'
     '- look up a course ("Tell me about CS 331")\n'
     '- find courses on a topic ("Any courses on machine learning?")\n'
+    '- match courses to career skills ("What skills do I need to become a data scientist?")\n'
     "What would you like to do?"
 )
 
 Classifier = Callable[[str], tuple[str | None, float]]
+# One chat-completions request body -> the reply message's content. The gateway in production;
+# a scripted FakeLLM in agent tests, so the real prompt, schema, and parsing are exercised.
+Completion = Callable[[dict[str, Any]], str]
 
 
 @dataclass(frozen=True)
@@ -142,24 +163,35 @@ class Route:
     agent: str | None  # None -> clarify
     confidence: float
     source: str
+    # Version of the classifier prompt when the model stage ran; None for a regex hit.
+    prompt_version: str | None = None
 
 
 def _classifier_prompt(text: str) -> str:
-    intents = "\n".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items())
-    examples = "\n".join(f"Message: {m}\nIntent: {i}" for m, i in _FEW_SHOT)
     # TODO: security - `text` is untrusted student input inside the prompt. The JSON schema
-    # below pins the output to the intent enum, so injection can at worst misroute.
-    return (
-        "You route messages for a university academic advisor. Pick the student's intent.\n"
-        f"{intents}\n- none: anything else\n\n{examples}\n\n"
-        'Reply as JSON: {"intent": "<intent>", "confidence": <0..1>}.\n\n'
-        f"Message: {text}\nIntent:"
+    # in ollama_classify pins the output to the intent enum, so injection can at worst misroute.
+    return ROUTER_PROMPT.render(
+        intents="\n".join(f"- {name}: {desc}" for name, desc in INTENT_DESCRIPTIONS.items()),
+        examples="\n\n".join(f"Message: {m}\nIntent: {i}" for m, i in _FEW_SHOT),
+        message=text,
     )
 
 
-def ollama_classify(text: str) -> tuple[str | None, float]:
-    """Ask the model, via the LiteLLM gateway, for an intent and a confidence in [0, 1]."""
+def gateway_complete(payload: dict[str, Any]) -> str:
+    """POST one chat completion to the LiteLLM gateway with the router's own key."""
     s = get_settings()
+    resp = httpx.post(
+        f"{s.litellm_base_url}/v1/chat/completions",
+        headers={"Authorization": f"Bearer {s.litellm_router_key.get_secret_value()}"},
+        json=payload,
+        timeout=30,
+    )
+    resp.raise_for_status()
+    return resp.json()["choices"][0]["message"]["content"]
+
+
+def ollama_classify(text: str, complete: Completion = gateway_complete) -> tuple[str | None, float]:
+    """Ask the model, via the LiteLLM gateway, for an intent and a confidence in [0, 1]."""
     schema = {
         "type": "object",
         "properties": {
@@ -168,23 +200,23 @@ def ollama_classify(text: str) -> tuple[str | None, float]:
         },
         "required": ["intent", "confidence"],
     }
+    payload = {
+        "model": get_settings().llm_default_model,
+        "messages": [{"role": "user", "content": _classifier_prompt(text)}],
+        "response_format": {
+            "type": "json_schema",
+            "json_schema": {"name": "route", "schema": schema},
+        },
+        "temperature": 0,
+        # A classifier needs no reasoning: thinking models (qwen3) otherwise spend ~400 hidden
+        # tokens (5-30 s on CPU) per route and sometimes never stop. The cap bounds a runaway;
+        # the answer is ~16 tokens. Eval 2026-10-14 (.claude/docs/WorkLog-2026-10-14.md).
+        "reasoning_effort": "none",
+        "max_tokens": 64,
+        "metadata": {"prompt_version": ROUTER_PROMPT.version},
+    }
     try:
-        resp = httpx.post(
-            f"{s.litellm_base_url}/v1/chat/completions",
-            headers={"Authorization": f"Bearer {s.litellm_router_key.get_secret_value()}"},
-            json={
-                "model": s.llm_default_model,
-                "messages": [{"role": "user", "content": _classifier_prompt(text)}],
-                "response_format": {
-                    "type": "json_schema",
-                    "json_schema": {"name": "route", "schema": schema},
-                },
-                "temperature": 0,
-            },
-            timeout=30,
-        )
-        resp.raise_for_status()
-        out = json.loads(resp.json()["choices"][0]["message"]["content"])
+        out = json.loads(complete(payload))
         intent, confidence = out["intent"], float(out["confidence"])
     except (httpx.HTTPError, KeyError, IndexError, ValueError, TypeError):
         return None, 0.0  # gateway/model unavailable or unparseable -> falls through to clarify
@@ -208,5 +240,5 @@ def route(
         return hit
     intent, confidence = classify(text)
     if intent in INTENTS and confidence >= threshold:
-        return Route(intent, INTENTS[intent], confidence, "model")
-    return Route(None, None, confidence, "clarify")
+        return Route(intent, INTENTS[intent], confidence, "model", ROUTER_PROMPT.version)
+    return Route(None, None, confidence, "clarify", ROUTER_PROMPT.version)

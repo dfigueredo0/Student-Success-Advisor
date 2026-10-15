@@ -44,6 +44,11 @@ def test_conversation_resumes_from_postgres_after_restart() -> None:
         second = api.post(
             "/chat", json={"message": "CS 351", "thread_id": first["thread_id"]}
         ).json()
-    assert second["tool_calls"][0]["args"] == {"course": "CS 450", "completed_courses": ["CS 351"]}
+    assert second["tool_calls"][0]["args"] == {
+        "course": "CS 450",
+        "completed_courses": ["CS 351"],
+        "grades": None,
+        "in_progress_courses": None,
+    }
     assert [m["role"] for m in second["state"]["messages"]] == ["user", "assistant"] * 2
     assert second["state"]["pending_field"] is None

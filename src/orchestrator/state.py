@@ -11,13 +11,15 @@ class State(TypedDict, total=False):
     route: str | None  # agent name; None means the router asked for clarification
     confidence: float
     route_source: str  # "regex" | "model" | "clarify"
+    prompt_version: str | None  # classifier prompt used this turn; None when regex routed
     # Scaffold progress
     slots: dict[str, Any]
     pending_field: str | None
     # What the student has told us (completed_courses, subject, ...); kept for the whole thread
-    # so it is asked once. Self-reported, so untrusted.
+    # so it is asked once. Self-reported, so untrusted. POST /transcript adds grades
+    # (course -> grade), in_progress_courses and major from an uploaded transcript.
     # TODO: needs impl - seed from tools.advisor.get_student_record once api.auth gives a
-    # student_id (and from parse_transcript on upload), instead of asking in chat.
+    # student_id, instead of asking in chat.
     profile: dict[str, Any]
     # Per-turn outputs, reset by `turn_input`
     agent_results: list[dict[str, Any]]
@@ -30,6 +32,7 @@ def turn_input(message: str) -> State:
     """Graph input for one user turn: appends the message, clears last turn's outputs."""
     return {
         "messages": [{"role": "user", "content": message}],
+        "prompt_version": None,
         "agent_results": [],
         "tool_calls": [],
         "answer": "",

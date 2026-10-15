@@ -21,6 +21,14 @@ AGENT_KEYS = [
         "rpm_limit": 300,
         "max_budget": 5.0,
     },
+    {
+        # Career Services agent: today only embeds skill queries for catalog search.
+        "key_alias": "career",
+        "setting": "litellm_career_key",
+        "models": ["nomic-embed-text"],
+        "rpm_limit": 60,
+        "max_budget": 5.0,
+    },
 ]
 
 

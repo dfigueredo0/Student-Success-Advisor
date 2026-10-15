@@ -15,9 +15,9 @@ from typing import Any
 
 from sqlalchemy import text
 
-from domain.graph import unmet_prerequisites
 from tools.advisor._db import engine
 from tools.advisor.catalog import BANNER_URL, credits
+from tools.advisor.check_prerequisites import eligibility
 
 # Research, independent study, co-op etc. list no prerequisites but need a faculty sponsor;
 # they are not "next courses" in a sequence.
@@ -33,7 +33,7 @@ _SUBJECTS = text("SELECT DISTINCT subject FROM catalog_course WHERE subject = AN
 _CANDIDATES = text(
     """
     SELECT c.code, c.subject, c.number, c.title, c.credit_hours, c.credit_hours_max,
-           c.prerequisites, c.prerequisite_courses,
+           c.prerequisites, c.prerequisite_courses, c.prereq_tree,
            count(s.crn) AS sections,
            coalesce(sum(greatest(s.remaining, 0)), 0) AS seats,
            (SELECT count(*) FROM catalog_course d WHERE c.code = ANY(d.prerequisite_courses))
@@ -115,7 +115,10 @@ def recommend_courses(
             continue
         if _NOT_A_NEXT_COURSE.search(r["title"]):
             continue
-        if unmet_prerequisites(r["prerequisite_courses"], completed):
+        # needs_grade: the student reported the course but the minimum is above D; the
+        # eligibility check asks for the grade, so the course is still worth suggesting.
+        status = eligibility(r["prerequisites"], r["prereq_tree"], completed)["status"]
+        if status not in ("satisfied", "needs_grade"):
             continue
         builds_on = [c for c in r["prerequisite_courses"] if c in completed]
         candidates.append(

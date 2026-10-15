@@ -58,6 +58,8 @@ TOOL_FAILED = "Sorry, I couldn't reach the course data just now. Please try agai
 class Agent:
     name: str
     scaffolds: dict[str, Scaffold]
+    # Tool names this agent may call; tools.guard.call_tool refuses anything else.
+    allowed_tools: frozenset[str] = frozenset()
 
     def run(
         self,
@@ -87,7 +89,7 @@ class Agent:
 
         args = {f.name: slots.get(f.name) for f in scaffold.fields}
         try:
-            call = call_tool(scaffold.tool, **args)
+            call = call_tool(scaffold.tool, self.allowed_tools, **args)
         except NotImplementedError:
             failed = {"name": scaffold.tool.__name__, "args": args, "error": "not implemented"}
             return self.reply(scaffold.unavailable, profile, tool_calls=[failed])

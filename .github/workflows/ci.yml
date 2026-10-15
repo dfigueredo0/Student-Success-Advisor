@@ -32,6 +32,16 @@ jobs:
       - run: uv sync --locked
       - run: make test-unit
 
+  agent:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+        with:
+          enable-cache: true
+      - run: uv sync --locked
+      - run: make test-agent
+
   integration:
     runs-on: ubuntu-latest
     timeout-minutes: 30

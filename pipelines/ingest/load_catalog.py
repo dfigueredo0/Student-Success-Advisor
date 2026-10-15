@@ -27,10 +27,12 @@ from sqlalchemy import Connection, create_engine, text
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 try:
+    from domain.prereq.parse import parse as parse_prerequisites
     from schemas.catalog import CatalogSnapshot, Course
     from settings import Settings, get_settings
 except ModuleNotFoundError:  # run outside `uv run`: fall back to the source tree
     sys.path.insert(0, str(REPO_ROOT / "src"))
+    from domain.prereq.parse import parse as parse_prerequisites
     from schemas.catalog import CatalogSnapshot, Course
     from settings import Settings, get_settings
 
@@ -50,11 +52,13 @@ _INSERT_COURSE = """
     INSERT INTO catalog_course (
         code, subject, number, title, description, credit_hours, credit_hours_max,
         lecture_hours, lab_hours, other_hours, levels, schedule_types, department, attributes,
-        prerequisites, prerequisite_courses, restrictions, catalog_term, content_hash, updated_at
+        prerequisites, prerequisite_courses, prereq_tree, restrictions, catalog_term, content_hash,
+        updated_at
     ) VALUES (
         :code, :subject, :number, :title, :description, :credit_hours, :credit_hours_max,
         :lecture_hours, :lab_hours, :other_hours, :levels, :schedule_types, :department, :attributes,
-        :prerequisites, :prerequisite_courses, :restrictions, :catalog_term, :content_hash, now()
+        :prerequisites, :prerequisite_courses, CAST(:prereq_tree AS jsonb), :restrictions,
+        :catalog_term, :content_hash, now()
     )
 """
 
@@ -71,10 +75,12 @@ UPSERT_COURSE = text(
         department = EXCLUDED.department, attributes = EXCLUDED.attributes,
         prerequisites = EXCLUDED.prerequisites,
         prerequisite_courses = EXCLUDED.prerequisite_courses,
+        prereq_tree = EXCLUDED.prereq_tree,
         restrictions = EXCLUDED.restrictions, catalog_term = EXCLUDED.catalog_term,
         content_hash = EXCLUDED.content_hash, updated_at = now()
     WHERE catalog_course.content_hash IS DISTINCT FROM EXCLUDED.content_hash
        OR catalog_course.catalog_term IS DISTINCT FROM EXCLUDED.catalog_term
+       OR catalog_course.prereq_tree IS DISTINCT FROM EXCLUDED.prereq_tree
     """
 )
 
@@ -115,6 +121,12 @@ SET_EMBEDDING = text(
     """
 )
 
+def _tree_json(prerequisites: str) -> str | None:
+    """jsonb parameter; SQL NULL (not JSON null) when there is no requirement."""
+    tree = parse_prerequisites(prerequisites)
+    return None if tree is None else json.dumps(tree)
+
+
 def _course_row(course: Course, term_code: str) -> dict[str, Any]:
     return {
         "code": course.name,
@@ -133,6 +145,7 @@ def _course_row(course: Course, term_code: str) -> dict[str, Any]:
         "attributes": course.attributes,
         "prerequisites": course.semester.prerequisites,
         "prerequisite_courses": course.prerequisite_courses,
+        "prereq_tree": _tree_json(course.semester.prerequisites),
         "restrictions": course.restrictions,
         "catalog_term": term_code,
         "content_hash": course.content_hash(),
