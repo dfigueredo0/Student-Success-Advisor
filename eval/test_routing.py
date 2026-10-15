@@ -15,6 +15,7 @@ def test_gold_set_is_well_formed() -> None:
 
 def test_pattern_stage_misroutes_do_not_grow() -> None:
     """Pattern hits are confident and skip the model, so a wrong one is a wrong answer.
-    Baseline 2026-10-14: 5 misroutes (R06, R08, R27, R45, R52). Lower this when fixed."""
+    Baseline 2026-10-14: 5 misroutes (R06, R08, R27, R45, R52); 0 since the pattern fixes
+    on 2026-10-15. Keep it at 0."""
     misrouted = run("regex")["metrics"]["outcomes"].get("misrouted", 0)
-    assert misrouted <= 5
+    assert misrouted == 0
