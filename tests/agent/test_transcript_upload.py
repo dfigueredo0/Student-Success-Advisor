@@ -43,10 +43,16 @@ def test_upload_seeds_profile_and_advisor_does_not_ask(api: tuple[TestClient, Fa
 
     chat = client.post("/chat", json={"message": "Can I take CS 450?", "thread_id": thread}).json()
 
+    # transcript grades and in-progress courses reach the evaluator, not just course codes
     assert check.calls == [
-        {"course": "CS 450", "completed_courses": ["MATH 151", "CS 115", "CS 116", "CS 331"]}
+        {
+            "course": "CS 450",
+            "completed_courses": ["MATH 151", "CS 115", "CS 116", "CS 331"],
+            "grades": {"MATH 151": "TR", "CS 115": "A", "CS 116": "A", "CS 331": "C+"},
+            "in_progress_courses": ["CS 350", "CS 351"],
+        }
     ]
-    assert chat["state"]["profile"]["grades"]["CS 331"] == "C+"
+    assert chat["state"]["pending_field"] is None  # nothing asked
 
 
 @pytest.mark.usefixtures("pdf")

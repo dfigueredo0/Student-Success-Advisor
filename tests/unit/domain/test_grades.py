@@ -8,10 +8,9 @@ from domain.grades import grade_satisfies
     [
         ("A", "C", True),
         ("C", "C", True),
-        ("C-", "C", False),
         ("D", "C", False),
-        ("B+", "B", True),  # grade points, not string order ("B+" > "B" as text too)
-        ("A-", "B+", True),  # string order would say "A-" < "B+"
+        ("C-", "C", False),  # IIT has no +/- grades: not a grade, never counts
+        ("B+", None, False),
         ("D", "D", True),
         ("E", "D", False),
         ("E", None, False),  # failed: no credit even without a minimum

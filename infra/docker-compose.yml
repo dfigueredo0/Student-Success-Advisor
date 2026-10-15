@@ -164,7 +164,7 @@ services:
     environment:
       <<: *langfuse-env
       HOSTNAME: 0.0.0.0
-      NEXTAUTH_URL: http://localhost:3000
+      NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3000}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ssa-dev-nextauth-secret}
       # Headless init: a fixed org/project/API keys so tests and the app can
       # trace without anyone clicking through the UI.
@@ -178,7 +178,7 @@ services:
       LANGFUSE_INIT_USER_NAME: dev
       LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ssa-dev-password}
     ports:
-      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:${LANGFUSE_PORT:-3000}:3000"
     depends_on:
       <<: *langfuse-deps
       langfuse-worker:

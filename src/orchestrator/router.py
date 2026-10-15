@@ -208,6 +208,11 @@ def ollama_classify(text: str, complete: Completion = gateway_complete) -> tuple
             "json_schema": {"name": "route", "schema": schema},
         },
         "temperature": 0,
+        # A classifier needs no reasoning: thinking models (qwen3) otherwise spend ~400 hidden
+        # tokens (5-30 s on CPU) per route and sometimes never stop. The cap bounds a runaway;
+        # the answer is ~16 tokens. Eval 2026-10-14 (.claude/docs/WorkLog-2026-10-14.md).
+        "reasoning_effort": "none",
+        "max_tokens": 64,
         "metadata": {"prompt_version": ROUTER_PROMPT.version},
     }
     try:

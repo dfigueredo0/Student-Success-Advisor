@@ -1,13 +1,20 @@
+import json
 from typing import Any
 
 import pytest
 from langgraph.checkpoint.memory import InMemorySaver
 
 from agents.base import TOOL_FAILED
-from agents.college_advisor import DEGREE_PROGRESS_UNAVAILABLE, CollegeAdvisor
+from agents.college_advisor import (
+    DEGREE_PROGRESS_UNAVAILABLE,
+    CollegeAdvisor,
+    _render_eligibility,
+)
+from domain.prereq import evaluate
 from orchestrator.graph import build_graph
 from orchestrator.router import route
 from orchestrator.state import turn_input
+from tools.advisor.check_prerequisites import eligibility_fields
 
 
 def no_model(text: str) -> tuple[str | None, float]:
@@ -68,8 +75,13 @@ class Tools:
                 "course": "CS 450",
                 "found": True,
                 "prerequisites": "CS 351",
+                "status": "satisfied",
                 "missing": [],
-                "eligible": True,
+                "pending": [],
+                "needs_grade": [],
+                "if_grade_too_low": None,
+                "unchecked_tests": [],
+                "unreadable": [],
                 "citations": [{"source": "catalog, CS 450"}],
             },
         )
@@ -152,7 +164,14 @@ def test_plan_asks_completed_once_and_remembers_it() -> None:
     assert "CS 331" in second["answer"] and "[1]" in second["answer"]
 
     chat.say("Can I take CS 450?")  # profile carries over: no second question
-    assert tools.check.calls == [{"course": "CS 450", "completed_courses": ["CS 115", "CS 116"]}]
+    assert tools.check.calls == [
+        {
+            "course": "CS 450",
+            "completed_courses": ["CS 115", "CS 116"],
+            "grades": None,
+            "in_progress_courses": None,
+        }
+    ]
 
 
 def test_unavailable_requested_term_is_called_out() -> None:
@@ -195,7 +214,14 @@ def test_answer_to_pending_question_is_not_rerouted() -> None:
     chat = Chat(tools.advisor())
     chat.say("Can I take CS 450?")
     chat.say("I've taken CS 351")  # looks like record_courses, but it answers the question
-    assert tools.check.calls == [{"course": "CS 450", "completed_courses": ["CS 351"]}]
+    assert tools.check.calls == [
+        {
+            "course": "CS 450",
+            "completed_courses": ["CS 351"],
+            "grades": None,
+            "in_progress_courses": None,
+        }
+    ]
 
 
 def test_find_courses_extracts_topic() -> None:
@@ -222,3 +248,61 @@ def test_tool_failure_returns_friendly_answer() -> None:
     tools.search = broken  # type: ignore[assignment]
     state = Chat(tools.advisor()).say("Any courses on databases?")
     assert state["answer"] == TOOL_FAILED
+
+
+# --- eligibility contract: domain.prereq.evaluate -> tool fields -> rendered answer ---
+
+
+def _answer(tree: dict[str, Any], completed: dict[str, str | None], **kw: Any) -> str:
+    result = {
+        "course": "CS 450",
+        "found": True,
+        "prerequisites": "CS 350 and (CS 351 or CS 331)",
+        **eligibility_fields(evaluate(tree, completed, **kw)),
+        "citations": [{"source": "IIT Banner course catalog, CS 450"}],
+    }
+    json.dumps(result)  # checkpointed and traced: must stay plain JSON
+    return _render_eligibility(result)
+
+
+def _course(code: str, minimum: str | None = "C") -> dict[str, Any]:
+    return {"type": "course", "course": code, "minimum_grade": minimum, "concurrent": False}
+
+
+TREE = {
+    "type": "and",
+    "children": [
+        _course("CS 350"),
+        {"type": "or", "children": [_course("CS 351"), _course("CS 331")]},
+    ],
+}
+
+
+def test_eligibility_satisfied_cites_banner() -> None:
+    text = _answer(TREE, {"CS 350": "B", "CS 331": "A"})
+    assert text.startswith("You meet the listed prerequisites for CS 450 [1].")
+    assert '"CS 350 and (CS 351 or CS 331)"' in text and "[1] IIT Banner" in text
+
+
+def test_eligibility_unsatisfied_names_cheapest_branch_and_low_grade() -> None:
+    text = _answer(TREE, {"CS 350": "D"})
+    assert "Cheapest way to get there: CS 350 (C or better; you have D), CS 351" in text
+    assert "CS 331" not in text.split("Catalog")[0]  # one OR branch, not both
+
+
+def test_eligibility_pending_names_in_progress_course() -> None:
+    text = _answer(TREE, {"CS 331": "A"}, in_progress=["CS 350"])
+    assert "once you finish CS 350 (C or better)" in text
+
+
+def test_eligibility_needs_grade_asks_for_it() -> None:
+    text = _answer(TREE, {"CS 350": None, "CS 331": "A"})
+    assert "depends on your grade in CS 350 (C or better)" in text
+    assert "Upload your transcript" in text
+
+
+def test_eligibility_flags_unreadable_and_test_score_parts() -> None:
+    unread = {"type": "unparsed", "text": "INTR 999"}
+    assert "confirm it with your academic advisor" in _answer(unread, {})
+    test = {"type": "test", "test": "S11", "low": "600", "high": "800"}
+    assert "test-score option I can't verify (S11 600-800)" in _answer(test, {})

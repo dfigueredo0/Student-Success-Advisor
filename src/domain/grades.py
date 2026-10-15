@@ -1,12 +1,11 @@
 """Grade comparison for prerequisite minimums. Grades compare as grade points, never strings.
 
-IIT undergraduate letters are A-E; +/- and F are accepted so transfer letters still compare.
+IIT letters are A-E plus F, with no +/- grades; anything else ("B+") is not a grade and never
+counts. Transfer work arrives as TR, not as the other school's letter.
 Banner minimums seen in the catalog: D, C, B, plus the non-letter codes TR and S.
 """
 
-GRADE_POINTS: dict[str, float] = {
-    "A": 4.0, "B": 3.0, "C": 2.0, "D": 1.0, "E": 0.0, "F": 0.0
-}
+GRADE_POINTS: dict[str, float] = {"A": 4.0, "B": 3.0, "C": 2.0, "D": 1.0, "E": 0.0, "F": 0.0}
 
 # Credit without a letter grade: transfer, satisfactory, pass, AP/test credit.
 NON_LETTER_PASS = frozenset({"TR", "S", "P", "AP"})

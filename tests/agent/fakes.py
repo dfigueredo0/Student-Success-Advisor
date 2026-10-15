@@ -55,7 +55,12 @@ def eligibility_result(course: str = "CS 450") -> dict[str, Any]:
         "course": course,
         "found": True,
         "prerequisites": "CS 351",
+        "status": "satisfied",
         "missing": [],
-        "eligible": True,
+        "pending": [],
+        "needs_grade": [],
+        "if_grade_too_low": None,
+        "unchecked_tests": [],
+        "unreadable": [],
         "citations": [{"source": f"IIT Banner course catalog, {course}", "quote": "CS 351"}],
     }

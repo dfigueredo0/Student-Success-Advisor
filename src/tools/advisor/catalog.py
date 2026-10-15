@@ -4,9 +4,9 @@ from typing import Any
 
 from sqlalchemy import text
 
-from domain.graph import unmet_prerequisites
 from retrieval.catalog_search import search_catalog
 from tools.advisor._db import engine
+from tools.advisor.check_prerequisites import eligibility as check_eligibility
 
 BANNER_URL = "https://ssb.iit.edu/bnrprd"
 
@@ -29,7 +29,7 @@ def meeting_summary(meetings: list[dict[str, Any]]) -> str:
 _COURSE = text(
     """
     SELECT c.code, c.title, c.description, c.credit_hours, c.credit_hours_max, c.levels,
-           c.attributes, c.prerequisites, c.prerequisite_courses, c.restrictions,
+           c.attributes, c.prerequisites, c.prereq_tree, c.restrictions,
            c.catalog_term, t.name AS catalog_term_name
     FROM catalog_course c JOIN catalog_term t ON t.code = c.catalog_term
     WHERE c.code = :code
@@ -56,8 +56,7 @@ def get_course_info(course: str, completed_courses: list[str] | None = None) -> 
 
     eligibility = None
     if completed_courses is not None:
-        missing = unmet_prerequisites(row["prerequisite_courses"], completed_courses)
-        eligibility = {"missing": missing, "eligible": not missing}
+        eligibility = check_eligibility(row["prerequisites"], row["prereq_tree"], completed_courses)
     return {
         "course": course,
         "found": True,

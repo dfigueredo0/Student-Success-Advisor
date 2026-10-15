@@ -1,0 +1,148 @@
+{
+  "date": "2026-10-14",
+  "grades": "unknown",
+  "courses_with_prerequisites": 1133,
+  "profiles": {
+    "first_year": {
+      "completed": [
+        "CS 100",
+        "CS 115",
+        "MATH 151"
+      ],
+      "categories": {
+        "overstated_missing": 394,
+        "agree": 702,
+        "wrongly_blocked": 8,
+        "wrongly_allowed": 28
+      },
+      "reasons": {
+        "overstated_missing: unneeded OR alternatives listed as missing": 394,
+        "wrongly_blocked: OR alternative already met": 8,
+        "wrongly_allowed: grade minimum, grade unknown": 1,
+        "wrongly_allowed: unreadable requirement text": 23,
+        "wrongly_allowed: course range or minimum grade not met": 4
+      },
+      "overstated_extra_courses_mean": 3.1,
+      "examples": {
+        "wrongly_allowed": [
+          "CS 116"
+        ],
+        "overstated_missing": [
+          "CS 330",
+          "CS 331",
+          "CS 340",
+          "CS 350",
+          "CS 351",
+          "CS 401",
+          "CS 402",
+          "CS 411"
+        ],
+        "wrongly_blocked": [
+          "MATH 148"
+        ]
+      }
+    },
+    "sophomore": {
+      "completed": [
+        "CS 100",
+        "CS 115",
+        "CS 116",
+        "CS 330",
+        "CS 331",
+        "MATH 151",
+        "MATH 152",
+        "PHYS 123"
+      ],
+      "categories": {
+        "overstated_missing": 364,
+        "agree": 700,
+        "wrongly_blocked": 36,
+        "wrongly_allowed": 27
+      },
+      "reasons": {
+        "overstated_missing: unneeded OR alternatives listed as missing": 364,
+        "wrongly_blocked: OR alternative already met": 36,
+        "wrongly_allowed: unreadable requirement text": 23,
+        "wrongly_allowed: course range or minimum grade not met": 4
+      },
+      "overstated_extra_courses_mean": 3.1,
+      "examples": {
+        "wrongly_blocked": [
+          "CS 340",
+          "CS 350",
+          "CS 411",
+          "CS 415",
+          "CS 422",
+          "CS 425",
+          "CS 429",
+          "CS 430"
+        ],
+        "overstated_missing": [
+          "CS 351",
+          "CS 401",
+          "CS 402",
+          "CS 450",
+          "CS 451",
+          "CS 456",
+          "CS 458",
+          "CS 470"
+        ]
+      }
+    },
+    "junior": {
+      "completed": [
+        "CS 100",
+        "CS 115",
+        "CS 116",
+        "CS 330",
+        "CS 331",
+        "CS 350",
+        "CS 351",
+        "CS 430",
+        "MATH 151",
+        "MATH 152",
+        "MATH 230",
+        "MATH 251",
+        "MATH 332",
+        "PHYS 123",
+        "PHYS 221"
+      ],
+      "categories": {
+        "overstated_missing": 342,
+        "agree": 694,
+        "wrongly_blocked": 45,
+        "wrongly_allowed": 40
+      },
+      "reasons": {
+        "overstated_missing: unneeded OR alternatives listed as missing": 342,
+        "wrongly_blocked: OR alternative already met": 45,
+        "wrongly_allowed: unreadable requirement text": 23,
+        "wrongly_allowed: grade minimum, grade unknown": 13,
+        "wrongly_allowed: course range or minimum grade not met": 4
+      },
+      "overstated_extra_courses_mean": 3.2,
+      "examples": {
+        "wrongly_blocked": [
+          "CS 340",
+          "CS 411",
+          "CS 415",
+          "CS 422",
+          "CS 425",
+          "CS 429",
+          "CS 440",
+          "CS 445"
+        ],
+        "overstated_missing": [
+          "CS 401",
+          "CS 402",
+          "CS 458",
+          "CS 485",
+          "MATH 122",
+          "MATH 405",
+          "MATH 446",
+          "MATH 477"
+        ]
+      }
+    }
+  }
+}

@@ -25,7 +25,14 @@ def test_eligibility_calls_tool_with_valid_args_and_cites() -> None:
 
     state = graph.invoke(turn_input("Can I take CS 450? I've taken CS 351."))
 
-    assert check.calls == [{"course": "CS 450", "completed_courses": ["CS 351"]}]
+    assert check.calls == [
+        {
+            "course": "CS 450",
+            "completed_courses": ["CS 351"],
+            "grades": None,
+            "in_progress_courses": None,
+        }
+    ]
     assert [c["name"] for c in state["tool_calls"]] == ["check_prerequisites"]
     assert len(state["citations"]) >= 1 and "[1]" in state["answer"]
     assert state["messages"][-1] == {"role": "assistant", "content": state["answer"]}
@@ -41,7 +48,17 @@ def test_model_routed_eligibility_reaches_the_tool() -> None:
 
     assert state["route_source"] == "model"
     assert len(llm.requests) == 1
-    assert check.calls == [{"course": "CS 450", "completed_courses": ["CS 351"]}]
+    # thinking off + a cap: qwen3 otherwise spent 5-30 s per route and sometimes never stopped
+    assert llm.requests[0]["reasoning_effort"] == "none"
+    assert llm.requests[0]["max_tokens"] == 64
+    assert check.calls == [
+        {
+            "course": "CS 450",
+            "completed_courses": ["CS 351"],
+            "grades": None,
+            "in_progress_courses": None,
+        }
+    ]
     assert state["citations"]
 
 

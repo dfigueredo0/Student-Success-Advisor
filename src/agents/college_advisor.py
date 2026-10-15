@@ -148,14 +148,49 @@ def _render_eligibility(r: dict[str, Any]) -> str:
     cite = f"[1] {r['citations'][0]['source']}"
     if not r["prerequisites"]:
         return f"{course} lists no prerequisites, so you can take it [1].\n\n{cite}"
-    if r["eligible"]:
-        verdict = f"You meet the listed prerequisites for {course} [1]."
-    else:
-        verdict = (
-            f"You don't appear to meet the prerequisites for {course} yet. "
-            f"Not in your completed courses: {', '.join(r['missing'])} [1]."
+    status = r["status"]
+    lines = []
+    if status == "satisfied":
+        lines.append(f"You meet the listed prerequisites for {course} [1].")
+    elif status == "pending":
+        lines.append(
+            f"You'll meet the prerequisites for {course} once you finish "
+            f"{_leaf_list(r['pending'])} [1]."
         )
-    return f'{verdict}\n\nCatalog prerequisites: "{r["prerequisites"]}"\n\n{cite}'
+    elif status == "needs_grade":
+        lines.append(
+            f"Whether you can take {course} depends on your grade in "
+            f"{_leaf_list(r['needs_grade'])} [1]. Upload your transcript or tell me the grade "
+            "and I'll check again."
+        )
+    else:
+        lines.append(f"You don't meet the prerequisites for {course} yet [1].")
+        if r["missing"]:
+            lines.append(f"Cheapest way to get there: {_leaf_list(r['missing'])}.")
+    if r["unreadable"]:
+        lines.append(
+            "I couldn't read part of this requirement, so please confirm it with your academic "
+            f'advisor: "{"; ".join(r["unreadable"])}".'
+        )
+    if r["unchecked_tests"] and status != "unsatisfied":
+        lines.append(
+            "This counts a test-score option I can't verify "
+            f"({', '.join(r['unchecked_tests'])}); confirm you have that score."
+        )
+    lines.append(f'\nCatalog prerequisites: "{r["prerequisites"]}"\n\n{cite}')
+    return "\n".join(lines)
+
+
+def _leaf_list(leaves: list[dict[str, Any]]) -> str:
+    def one(x: dict[str, Any]) -> str:
+        notes = []
+        if x["minimum_grade"]:
+            notes.append(f"{x['minimum_grade']} or better")
+        if x["earned"]:
+            notes.append(f"you have {x['earned']}")
+        return x["requirement"] + (f" ({'; '.join(notes)})" if notes else "")
+
+    return ", ".join(one(x) for x in leaves)
 
 
 def _render_course_info(r: dict[str, Any]) -> str:
@@ -170,11 +205,12 @@ def _render_course_info(r: dict[str, Any]) -> str:
     if r["restrictions"]:
         lines.append(f"Restrictions: {r['restrictions']}")
     if (e := r["eligibility"]) is not None:
-        lines.append(
-            "From the courses you've told me, you meet the listed prerequisites."
-            if e["eligible"]
-            else f"Not yet in your completed courses: {', '.join(e['missing'])}."
-        )
+        if e["status"] == "satisfied":
+            lines.append("From the courses you've told me, you meet the listed prerequisites.")
+        elif e["missing"]:
+            lines.append(f"Cheapest way to meet them: {_leaf_list(e['missing'])}.")
+        else:
+            lines.append(f'Ask "Can I take {course}?" to check your eligibility in detail.')
     if sections := r["sections"]:
         lines.append(f"\nOffered {sections[0]['term']} ({len(sections)} section(s)):")
         for s in sections[:5]:
@@ -289,6 +325,9 @@ class CollegeAdvisor(Agent):
         progress: Callable[..., dict[str, Any]] = get_degree_progress,
     ) -> None:
         completed_optional = Field("completed_courses", "", _absent, needed=_never, remember=True)
+        # From an uploaded transcript (POST /transcript); never asked for in chat.
+        grades = Field("grades", "", _absent, needed=_never, remember=True)
+        in_progress = Field("in_progress_courses", "", _absent, needed=_never, remember=True)
         self.scaffolds = {
             "check_eligibility": Scaffold(
                 intent="check_eligibility",
@@ -301,6 +340,8 @@ class CollegeAdvisor(Agent):
                         _completed,
                         remember=True,
                     ),
+                    grades,
+                    in_progress,
                 ),
                 tool=check,
                 render=_render_eligibility,
