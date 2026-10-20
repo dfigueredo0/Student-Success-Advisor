@@ -9,7 +9,7 @@ let currentStudent = {
     totalCredits: 126
 };
 
-const courseDatabase = [
+const SAMPLE_COURSES = [
     // Year 1
     { id: "CS115", code: "CS 115", title: "Object-Oriented Prog I", term: "Fall Year 1", status: "COMPLETED", credits: 3, prereqs: [], desc: "Intro to programming using Java." },
     { id: "MATH151", code: "MATH 151", title: "Calculus I", term: "Fall Year 1", status: "COMPLETED", credits: 5, prereqs: [], desc: "Functions, limits, and derivatives." },
@@ -30,7 +30,38 @@ const courseDatabase = [
     { id: "IPRO497", code: "IPRO 497", title: "Interprofessional Project", term: "Spring Year 4", status: "UNLOCKED", credits: 3, prereqs: ["CS331"], desc: "Multidisciplinary team project capstone." }
 ];
 
-const terms = ["Fall Year 1", "Spring Year 1", "Fall Year 2", "Spring Year 2", "Fall Year 3", "Spring Year 4"];
+const SAMPLE_TERMS = ["Fall Year 1", "Spring Year 1", "Fall Year 2", "Spring Year 2", "Fall Year 3", "Spring Year 4"];
+
+// What the page shows right now: a sample student, or the courses parsed from an upload.
+let courseDatabase = SAMPLE_COURSES.map(cloneCourse);
+let terms = SAMPLE_TERMS;
+// The last /transcript response, so "Reset Defaults" can restore what was parsed.
+let parsedTranscript = null;
+
+const TRANSFER_TERM = "Transfer Credit";
+const SEASON_ORDER = { Spring: 0, Summer: 1, Fall: 2 };
+// Grades the transcript parser can return, plus IP for a course still in progress.
+const GRADE_OPTIONS = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "E", "F", "TR", "IP"];
+
+function cloneCourse(c) {
+    return { ...c, prereqs: [...c.prereqs] };
+}
+
+// Course titles and terms come out of an uploaded PDF, so they are escaped before they go
+// into innerHTML.
+function esc(value) {
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+    return String(value ?? '').replace(/[&<>"']/g, ch => map[ch]);
+}
+
+// Terms found in the courses, oldest first, with transfer credit before everything else.
+function termsFor(courses) {
+    const key = t => {
+        const m = /^(Spring|Summer|Fall) (\d{4})$/.exec(t);
+        return m ? Number(m[2]) * 3 + SEASON_ORDER[m[1]] : -1;
+    };
+    return [...new Set(courses.map(c => c.term))].sort((a, b) => key(a) - key(b));
+}
 
 /* -------------------------------------------------------------
    2. VIEW NAVIGATION HANDLERS
@@ -59,19 +90,75 @@ function enableProcessBtn() {
     }
 }
 
+async function readError(res) {
+    try {
+        const body = await res.json();
+        if (typeof body.detail === 'string') return body.detail;
+    } catch (_) { /* not JSON */ }
+    return `Upload failed (${res.status} ${res.statusText})`;
+}
+
 async function handleTranscriptUpload() {
     const fileInput = document.getElementById('transcript-file-input');
+    const btn = document.getElementById('process-btn');
+    const status = document.getElementById('upload-status');
     if (fileInput.files.length === 0) return;
 
-    // Local fallback simulation
-    currentStudent.name = "Custom Upload Student";
-    currentStudent.credits = 45;
-    currentStudent.gpa = "3.60";
+    btn.disabled = true;
+    status.innerText = 'Reading your transcript...';
+    try {
+        // The API reads the raw PDF as the request body. No thread_id is sent, so every upload
+        // starts a new conversation and nothing from an earlier transcript carries over.
+        const res = await fetch('/transcript', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/pdf' },
+            body: fileInput.files[0],
+        });
+        if (!res.ok) throw new Error(await readError(res));
+        const data = await res.json();
+        chatThreadId = data.thread_id;  // the advisor already has these courses; chat continues here
+        status.innerText = '';
+        loadParsedTranscript(data);
+    } catch (err) {
+        status.innerText = err.message;
+    } finally {
+        btn.disabled = false;
+    }
+}
 
+function loadParsedTranscript(data) {
+    parsedTranscript = data;
+    courseDatabase = data.courses.map((c, i) => ({
+        id: `${c.course}|${c.term || 'TR'}|${i}`,
+        code: c.course,
+        title: c.title,
+        term: c.term || TRANSFER_TERM,
+        status: c.status === 'in_progress' ? 'IN_PROGRESS' : 'COMPLETED',
+        grade: c.grade || '',
+        credits: c.credits,
+        prereqs: [],
+        fromTranscript: true,
+        desc: c.status === 'in_progress'
+            ? `In progress, ${c.term}.`
+            : c.term ? `Taken ${c.term}, grade ${c.grade}.` : 'Transfer credit.',
+    }));
+    terms = termsFor(courseDatabase);
+    // The parser never reads the student's name, so none is shown. The transcript prints the
+    // major as "<major>, <department>" (often the same words twice); show the major only.
+    currentStudent = {
+        name: "Uploaded transcript",
+        major: (data.major || "").split(",")[0].trim() || "Not found on transcript",
+        gpa: data.gpa == null ? "-" : data.gpa.toFixed(2),
+        credits: 0,
+        totalCredits: 126,
+    };
     showWorkspace();
 }
 
 function loadSampleStudent(type) {
+    parsedTranscript = null;
+    courseDatabase = SAMPLE_COURSES.map(cloneCourse);
+    terms = SAMPLE_TERMS;
     if (type === 'senior') {
         currentStudent = { name: "Alex Johnson", major: "B.S. CS", gpa: "3.85", credits: 92, totalCredits: 126 };
         courseDatabase.find(c => c.id === 'CS350').status = 'IN_PROGRESS';
@@ -104,6 +191,12 @@ function resetToUpload() {
     document.getElementById('transcript-file-input').value = "";
     document.getElementById('process-btn').disabled = true;
     document.getElementById('process-btn').className = "btn-secondary";
+    document.getElementById('upload-status').innerText = '';
+    // Leaving the workspace ends this conversation; the next student starts clean.
+    chatThreadId = null;
+    document.getElementById('chat-log').innerHTML =
+        '<div class="msg msg-system">Hello! Transcript parsed successfully. ' +
+        'How can I assist with your course planning today?</div>';
 }
 
 /* -------------------------------------------------------------
@@ -115,28 +208,27 @@ function renderTranscriptTable() {
 
     courseDatabase.forEach((course, index) => {
         const tr = document.createElement('tr');
+        // What the grade box shows: the parsed grade, IP while in progress, A for sample rows.
+        const shownGrade = course.grade || (course.status === 'IN_PROGRESS' ? 'IP' : 'A');
+        const gradeOptions = GRADE_OPTIONS.includes(shownGrade) ? GRADE_OPTIONS : [...GRADE_OPTIONS, shownGrade];
         tr.innerHTML = `
             <td>
-                <input type="text" value="${course.code}" onchange="updateCourseField(${index}, 'code', this.value)">
+                <input type="text" value="${esc(course.code)}" onchange="updateCourseField(${index}, 'code', this.value)">
             </td>
             <td>
-                <input type="text" value="${course.title}" onchange="updateCourseField(${index}, 'title', this.value)">
+                <input type="text" value="${esc(course.title)}" onchange="updateCourseField(${index}, 'title', this.value)">
             </td>
             <td>
                 <select onchange="updateCourseField(${index}, 'term', this.value)">
-                    ${terms.map(t => `<option value="${t}" ${course.term === t ? 'selected' : ''}>${t}</option>`).join('')}
+                    ${terms.map(t => `<option value="${esc(t)}" ${course.term === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}
                 </select>
             </td>
             <td>
-                <input type="number" min="1" max="6" value="${course.credits}" onchange="updateCourseField(${index}, 'credits', parseInt(this.value) || 0)">
+                <input type="number" min="0" max="6" value="${course.credits}" onchange="updateCourseField(${index}, 'credits', parseFloat(this.value) || 0)">
             </td>
             <td>
                 <select onchange="updateCourseField(${index}, 'grade', this.value)">
-                    <option value="A" ${course.grade === 'A' || !course.grade ? 'selected' : ''}>A</option>
-                    <option value="B" ${course.grade === 'B' ? 'selected' : ''}>B</option>
-                    <option value="C" ${course.grade === 'C' ? 'selected' : ''}>C</option>
-                    <option value="D" ${course.grade === 'D' ? 'selected' : ''}>D</option>
-                    <option value="IP" ${course.status === 'IN_PROGRESS' ? 'selected' : ''}>In Prog</option>
+                    ${gradeOptions.map(g => `<option value="${esc(g)}" ${g === shownGrade ? 'selected' : ''}>${g === 'IP' ? 'In Prog' : esc(g)}</option>`).join('')}
                 </select>
             </td>
             <td>
@@ -169,7 +261,7 @@ function addNewTranscriptRow() {
         id: "CUSTOM_" + Date.now(),
         code: "CS 4XX",
         title: "New Elective Course",
-        term: "Fall Year 3",
+        term: terms[terms.length - 1],
         status: "UNLOCKED",
         credits: 3,
         prereqs: [],
@@ -191,7 +283,9 @@ function deleteCourseRow(index) {
 }
 
 function resetTranscriptData() {
-    loadSampleStudent('senior');
+    // Back to what was parsed from the upload, or to the sample student if none was uploaded.
+    if (parsedTranscript) loadParsedTranscript(parsedTranscript);
+    else loadSampleStudent('senior');
     renderTranscriptTable();
 }
 
@@ -213,11 +307,13 @@ function recalculatePrerequisites() {
 }
 
 function syncStudentMetrics() {
-    let totalEarned = 0;
+    // Credits earned count once per course: a retaken course appears on the transcript twice,
+    // and a failed attempt earns nothing.
+    const earned = new Map();
     courseDatabase.forEach(c => {
-        if (c.status === 'COMPLETED') totalEarned += c.credits;
+        if (c.status === 'COMPLETED' && c.grade !== 'E' && c.grade !== 'F') earned.set(c.code, c.credits);
     });
-    currentStudent.credits = totalEarned;
+    currentStudent.credits = [...earned.values()].reduce((sum, cr) => sum + cr, 0);
 
     document.getElementById('info-name').innerText = currentStudent.name;
     document.getElementById('info-major').innerText = currentStudent.major;
@@ -248,11 +344,12 @@ function renderFlowchart() {
             card.className = `course-card status-${course.status.toLowerCase()}`;
             card.onclick = () => openModal(course);
 
+            const grade = course.status === 'COMPLETED' && course.grade ? ` · ${esc(course.grade)}` : '';
             card.innerHTML = `
-                <div class="code">${course.code}</div>
-                <div class="title">${course.title}</div>
+                <div class="code">${esc(course.code)}</div>
+                <div class="title">${esc(course.title)}</div>
                 <div class="meta">
-                    <span>${course.credits} Credits</span>
+                    <span>${course.credits} Credits${grade}</span>
                     <span class="status-tag">${course.status.replace('_', ' ')}</span>
                 </div>
             `;
@@ -271,7 +368,9 @@ function openModal(course) {
     document.getElementById('modal-term').innerText = course.term;
     document.getElementById('modal-credits').innerText = course.credits;
     document.getElementById('modal-status').innerText = course.status;
-    document.getElementById('modal-prereqs').innerText = course.prereqs.length > 0 ? course.prereqs.join(', ') : 'None';
+    document.getElementById('modal-prereqs').innerText = course.fromTranscript
+        ? 'Not shown for transcript courses'
+        : course.prereqs.length > 0 ? course.prereqs.join(', ') : 'None';
     document.getElementById('modal-desc').innerText = course.desc;
     
     document.getElementById('course-modal').classList.remove('hidden');
