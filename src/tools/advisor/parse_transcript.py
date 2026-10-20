@@ -32,10 +32,14 @@ def pdf_text(content: bytes) -> str:
 
 
 def parse_transcript(content: bytes) -> dict[str, Any]:
-    """Shape matches get_student_record, plus `grades` (course -> grade).
+    """Shape matches get_student_record, plus `grades` (course -> grade) and `courses`.
 
     Completed courses include transfer credit (grade "TR"). Courses with a non-letter grade
     (W, I, P/NP) are not read yet, so they are neither completed nor graded here.
+
+    `courses` is one row per course attempt as printed on the transcript (a retaken course
+    appears twice), for display only: the advisor's profile uses `grades`, which keeps the
+    latest attempt. Rows carry no identifying fields.
     """
     transcript = parse_transcript_text(pdf_text(content))
     grades = transcript.grades()
@@ -43,9 +47,33 @@ def parse_transcript(content: bytes) -> dict[str, Any]:
         raise TranscriptRejected(
             "I couldn't find any courses in that file. Is it your IIT unofficial transcript?"
         )
+    courses: list[dict[str, Any]] = [
+        {
+            "course": c.course,
+            "title": c.title,
+            "term": c.term,
+            "grade": c.grade,
+            "credits": c.credits,
+            "status": "completed",
+        }
+        for c in [*transcript.transfer, *transcript.completed]
+    ]
+    courses += [
+        {
+            "course": c.course,
+            "title": c.title,
+            "term": c.term,
+            "grade": None,
+            "credits": c.credits,
+            "status": "in_progress",
+        }
+        for c in transcript.in_progress
+    ]
     return {
         "completed_courses": list(grades),
         "in_progress_courses": [c.course for c in transcript.in_progress],
         "grades": grades,
         "major": transcript.major,
+        "gpa": transcript.gpa(),
+        "courses": courses,
     }

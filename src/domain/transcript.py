@@ -31,6 +31,8 @@ def _section(text: str, pattern: str) -> str | None:
 def _rows(section: str) -> list[tuple[str, str]]:
     """(course code, text up to the next course) for each course row in a section."""
     starts = list(_COURSE_START.finditer(section))
+    if not starts:  # e.g. an in-progress heading with no courses under it
+        return []
     ends = [s.start() for s in starts[1:]] + [len(section)]
     return [
         (f"{s.group(1)} {s.group(2)}", section[s.end() : end])
@@ -72,6 +74,7 @@ def parse_transcript_text(text: str) -> Transcript:
                         term=term.group(1),
                         grade=d.group(1),
                         credits=float(d.group(2)),
+                        quality_points=float(d.group(3)),
                     )
                 )
 

@@ -5,7 +5,7 @@ courses and major are merged into the thread's profile, so the advisor stops ask
 """
 
 import uuid
-from typing import Any
+from typing import Any, Literal
 
 from fastapi import APIRouter, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
@@ -17,10 +17,24 @@ from tools.advisor.parse_transcript import MAX_BYTES, TranscriptRejected, parse_
 router = APIRouter()
 
 
+class CourseRow(BaseModel):
+    """One course attempt as printed on the transcript, for the UI to display."""
+
+    course: str
+    title: str
+    term: str | None  # None for transfer credit
+    grade: str | None  # None while in progress
+    credits: float
+    status: Literal["completed", "in_progress"]
+
+
 class TranscriptResponse(BaseModel):
     thread_id: str
     completed_courses: list[str]
     in_progress_courses: list[str]
+    major: str | None  # as printed: "<major>, <department>"
+    gpa: float | None  # institution GPA from the transcript's own quality points
+    courses: list[CourseRow]
 
 
 async def _read_capped(request: Request) -> bytes:
@@ -84,4 +98,7 @@ async def upload_transcript(
         thread_id=thread_id,
         completed_courses=record["completed_courses"],
         in_progress_courses=record["in_progress_courses"],
+        major=record["major"],
+        gpa=record["gpa"],
+        courses=record["courses"],
     )

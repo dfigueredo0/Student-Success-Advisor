@@ -40,6 +40,11 @@ def test_upload_seeds_profile_and_advisor_does_not_ask(api: tuple[TestClient, Fa
     assert up.status_code == 200, up.text
     thread = up.json()["thread_id"]
     assert up.json()["in_progress_courses"] == ["CS 350", "CS 351"]
+    assert up.json()["major"] == "Computer Science, Computer Science"
+    assert up.json()["gpa"] == 3.27
+    rows = up.json()["courses"]  # what the page lists: every attempt, with term and grade
+    assert [r["course"] for r in rows if r["status"] == "in_progress"] == ["CS 350", "CS 351"]
+    assert {"course", "title", "term", "grade", "credits", "status"} == set(rows[0])
 
     chat = client.post("/chat", json={"message": "Can I take CS 450?", "thread_id": thread}).json()
 
