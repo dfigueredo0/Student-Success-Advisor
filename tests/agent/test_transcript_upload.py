@@ -57,7 +57,7 @@ def test_upload_seeds_profile_and_advisor_does_not_ask(api: tuple[TestClient, Fa
             "in_progress_courses": ["CS 350", "CS 351"],
         }
     ]
-    assert chat["state"]["pending_field"] is None  # nothing asked
+    assert chat["pending_field"] is None  # nothing asked
 
 
 @pytest.mark.usefixtures("pdf")
@@ -78,3 +78,16 @@ def test_rejected_upload_is_422_and_leaves_profile_alone(
     assert resp.status_code == 422
     assert "PDF" in resp.json()["detail"]
     assert client.app.state.graph.get_state({"configurable": {"thread_id": "t1"}}).values == {}
+
+
+@pytest.mark.usefixtures("pdf")
+def test_chat_response_does_not_echo_the_transcript(api: tuple[TestClient, FakeTool]) -> None:
+    """With no accounts, the conversation ID is the only key: whoever sends it must not get
+    the grades, major or course list back (only DEBUG=true returns state and tool calls)."""
+    client, _ = api
+    up = client.post("/transcript", content=b"%PDF-", headers={"content-type": "application/pdf"})
+    thread = up.json()["thread_id"]
+    resp = client.post("/chat", json={"message": "Can I take CS 450?", "thread_id": thread})
+    assert resp.json()["state"] is None and resp.json()["tool_calls"] is None
+    for private in ('"C+"', "Computer Science", "CS 331", "MATH 151"):
+        assert private not in resp.text

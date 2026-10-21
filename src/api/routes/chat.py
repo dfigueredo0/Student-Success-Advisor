@@ -6,6 +6,7 @@ from langfuse import get_client, propagate_attributes
 from pydantic import BaseModel, Field
 
 from orchestrator.state import turn_input
+from settings import get_settings
 
 router = APIRouter()
 
@@ -23,13 +24,17 @@ class ChatResponse(BaseModel):
     thread_id: str
     answer: str
     citations: list[dict[str, Any]]
-    tool_calls: list[dict[str, Any]]
-    # TODO: frontend - state["agent_results"][...] / tool_calls carry structured results
-    # (e.g. recommend_courses' recommendations) the trajectory map could highlight.
-    # TODO: security - returns the full graph state (profile, slots); trim for prod.
-    state: dict[str, Any]
+    pending_field: str | None  # the advisor is waiting for this answer, e.g. "completed_courses"
     trace_id: str | None
     trace_url: str | None
+    # Debug only (DEBUG=true, `make api-debug`). The conversation ID is the only key to a
+    # conversation (there are no accounts), and the state and tool arguments hold the
+    # student's courses, grades and major, so normal responses leave them out.
+    # TODO: frontend - state["agent_results"][...] / tool_calls carry structured results
+    # (e.g. recommend_courses' recommendations) the trajectory map could highlight; expose
+    # only the fields it needs.
+    tool_calls: list[dict[str, Any]] | None = None
+    state: dict[str, Any] | None = None
 
 
 # TODO: needs impl - authenticate the caller (api.auth) and bind thread_id to the
@@ -48,12 +53,14 @@ def chat(req: ChatRequest, request: Request) -> ChatResponse:
         )
         span.update(output=state["answer"])
         trace_id = langfuse.get_current_trace_id()
+    debug = get_settings().debug
     return ChatResponse(
         thread_id=thread_id,
         answer=state["answer"],
         citations=state["citations"],
-        tool_calls=state["tool_calls"],
-        state=state,
+        pending_field=state.get("pending_field"),
         trace_id=trace_id,
         trace_url=langfuse.get_trace_url(trace_id=trace_id) if trace_id else None,
+        tool_calls=state["tool_calls"] if debug else None,
+        state=state if debug else None,
     )

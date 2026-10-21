@@ -58,7 +58,7 @@ All ports are bound to `localhost` only.
 | ------------------- | -------------------------- | -------------------------------------------------------------------------------- |
 | Web UI              | http://localhost:8000      | `frontend/` served by the API (`make api`)                                       |
 | Chat API            | http://localhost:8000/chat | `POST`; interactive docs at http://localhost:8000/docs                           |
-| Debug harness       | http://localhost:8501      | `make harness` (Streamlit); shows state, tool calls, trace links                 |
+| Debug harness       | http://localhost:8501      | `make harness` with `make api-debug`; shows state, tool calls, trace links       |
 | Langfuse            | http://localhost:3000 (`LANGFUSE_PORT`) | Traces for every request. Login:`dev@ssa.local` / `ssa-dev-password`             |
 | LiteLLM gateway     | http://localhost:4000      | Every model call goes through here; needs a key from`.env`                       |
 | LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_MASTER_KEY`   |
@@ -86,9 +86,13 @@ Content-Type: application/json
 {"message": "Can I take CS 450?", "thread_id": null}
 ```
 
-Send back the returned `thread_id` to continue the same conversation. The response includes
-`answer` (plain text, so render it as text, not HTML), `citations` (`source`, `url`,
-`quote`), `tool_calls`, and `trace_url`. See http://localhost:8000/docs for the full schema.
+Send back the returned `thread_id` to continue the same conversation. Treat it like a
+password: there are no accounts, so whoever has it can continue the conversation. Keep it
+out of URLs and logs. The response includes `answer` (plain text, so render it as text, not
+HTML), `citations` (`source`, `url`, `quote`), `pending_field` (what the advisor is waiting
+for, if anything) and `trace_url`. `state` and `tool_calls` hold the student's courses and
+grades, so they are only returned in debug mode (`make api-debug`). See
+http://localhost:8000/docs for the full schema.
 
 The student data in `app.js` is mock data for now. Don't send course lists or student IDs
 from the browser; the advisor will get them from the logged-in student once auth exists.
@@ -97,7 +101,7 @@ from the browser; the advisor will get them from the logged-in student once auth
 
 ```bash
 make api-debug   # same API, prints every router/agent/merge step to the terminal
-make harness     # Streamlit debug page (run alongside make api)
+make harness     # Streamlit debug page (run alongside make api-debug)
 ```
 
 - Code lives in top-level packages under `src/` (`agents`, `orchestrator`, `tools`, `domain`, ...).
