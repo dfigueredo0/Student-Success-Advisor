@@ -7,6 +7,9 @@ from langgraph.checkpoint.memory import InMemorySaver
 from agents.base import TOOL_FAILED
 from agents.college_advisor import (
     DEGREE_PROGRESS_UNAVAILABLE,
+    GREETING,
+    GREETINGS_AGAIN,
+    HELP,
     CollegeAdvisor,
     _render_eligibility,
 )
@@ -142,6 +145,8 @@ class Chat:
         ("Are there any courses on machine learning?", "find_courses"),
         ("I've taken CS 115 and MATH 151", "record_courses"),
         ("hi", "help"),
+        ("hey there!", "help"),
+        ("good morning", "help"),
         ("What can you do?", "help"),
     ],
 )
@@ -306,3 +311,20 @@ def test_eligibility_flags_unreadable_and_test_score_parts() -> None:
     assert "confirm it with your academic advisor" in _answer(unread, {})
     test = {"type": "test", "test": "S11", "low": "600", "high": "800"}
     assert "test-score option I can't verify (S11 600-800)" in _answer(test, {})
+
+
+def test_greeting_gets_a_short_reply_not_the_menu() -> None:
+    assert Chat(Tools().advisor()).say("hello!")["answer"] == GREETING
+
+
+def test_repeated_greetings_do_not_repeat_the_same_reply() -> None:
+    chat = Chat(Tools().advisor())
+    answers = [chat.say("hi")["answer"] for _ in range(1 + len(GREETINGS_AGAIN))]
+    assert answers[0] == GREETING
+    assert answers[1:] == list(GREETINGS_AGAIN)
+
+
+def test_asking_what_it_can_do_still_gets_the_full_menu() -> None:
+    chat = Chat(Tools().advisor())
+    chat.say("hey")
+    assert chat.say("What can you do?")["answer"] == HELP

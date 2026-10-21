@@ -60,6 +60,23 @@ HELP = (
     "remember it for this conversation."
 )
 
+# A greeting gets a short reply instead of the full HELP menu. Later greetings in the same
+# conversation rotate through GREETINGS_AGAIN so a second "hi" doesn't repeat the first.
+_GREETING = re.compile(
+    r"^\s*(hi+|hello+|hey+|hiya|howdy|yo|good (morning|afternoon|evening))(\s+there)?"
+    r"[\s!.?,)]*$",
+    re.I,
+)
+GREETING = (
+    "Hey! 👋 I'm your Illinois Tech course advisor. Ask me about classes, "
+    "prerequisites, or what to take next."
+)
+GREETINGS_AGAIN = (
+    "Hey again! What can I help with?",
+    "Hi! Got a course in mind, or want ideas for next semester?",
+    "Hello again 🙂 What are you looking into?",
+)
+
 ASK_COMPLETED_FOR_PLAN = (
     "To suggest courses I need to know what you've already completed. List course codes "
     "(e.g. CS 115, MATH 151), or say 'none' if you're just starting."
@@ -408,6 +425,8 @@ class CollegeAdvisor(Agent):
     ) -> AgentResult:
         profile = dict(profile or {})
         if intent == "help":
+            if _GREETING.match(text):
+                return self._greet(profile)
             return self.reply(HELP, profile)
         if intent == "record_courses":
             return self._record(text, profile)
@@ -415,6 +434,13 @@ class CollegeAdvisor(Agent):
         if pending != "completed_courses" and (cue := _COMPLETED_CUE.search(text)):
             _remember_completed(profile, _codes(text[cue.end() :]))
         return super().run(intent, text, slots, pending, profile)
+
+    def _greet(self, profile: dict[str, Any]) -> AgentResult:
+        greeted = profile.get("greetings", 0)
+        profile["greetings"] = greeted + 1
+        if not greeted:
+            return self.reply(GREETING, profile)
+        return self.reply(GREETINGS_AGAIN[(greeted - 1) % len(GREETINGS_AGAIN)], profile)
 
     def _record(self, text: str, profile: dict[str, Any]) -> AgentResult:
         codes = _codes(text)

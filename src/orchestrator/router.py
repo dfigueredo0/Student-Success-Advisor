@@ -134,7 +134,9 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
     (re.compile(rf"^\s*{_CODE}\s*\??\s*$", re.I), "course_info", 0.8, False),
     (
         re.compile(
-            r"^\s*(hi|hello|hey|help)\s*[!.?]*\s*$|\bwhat can you do\b|\bwho are you\b", re.I
+            r"^\s*(hi+|hello+|hey+|hiya|howdy|yo|help|good (morning|afternoon|evening))"
+            r"(\s+there)?[\s!.?,)]*$|\bwhat can you do\b|\bwho are you\b",
+            re.I,
         ),
         "help",
         0.9,
