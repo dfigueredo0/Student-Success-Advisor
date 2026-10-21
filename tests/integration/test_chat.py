@@ -1,4 +1,5 @@
 import time
+from typing import Any
 
 import httpx
 from fastapi.testclient import TestClient
@@ -7,14 +8,20 @@ from langfuse import get_client
 from api.main import app
 
 
+def stored(api: TestClient, thread_id: str) -> dict[str, Any]:
+    """The conversation as the server keeps it; normal responses no longer carry it."""
+    return api.app.state.graph.get_state({"configurable": {"thread_id": thread_id}}).values
+
+
 def test_one_request_creates_one_trace_with_expected_spans(langfuse: httpx.Client) -> None:
     with TestClient(app) as api:
         resp = api.post("/chat", json={"message": "Can I take CS 450? I've taken CS 351."})
         assert resp.status_code == 200, resp.text
         body = resp.json()
+        tool_calls = stored(api, body["thread_id"])["tool_calls"]
         get_client().flush()
     assert body["trace_id"]
-    assert [c["name"] for c in body["tool_calls"]] == ["check_prerequisites"]
+    assert [c["name"] for c in tool_calls] == ["check_prerequisites"]
 
     expected = ["chat", "check_prerequisites", "college_advisor", "merge", "router"]
     names: list[str] = []
@@ -35,8 +42,8 @@ def test_one_request_creates_one_trace_with_expected_spans(langfuse: httpx.Clien
 def test_conversation_resumes_from_postgres_after_restart() -> None:
     with TestClient(app) as api:  # first process: agent asks for the missing field
         first = api.post("/chat", json={"message": "Can I take CS 450?"}).json()
-    assert first["tool_calls"] == []
-    assert first["state"]["pending_field"] == "completed_courses"
+        assert stored(api, first["thread_id"])["tool_calls"] == []
+    assert first["pending_field"] == "completed_courses"
 
     # Lifespan exit closed the graph and its checkpointer connection; a new lifespan
     # is a fresh process as far as conversation state goes.
@@ -44,11 +51,12 @@ def test_conversation_resumes_from_postgres_after_restart() -> None:
         second = api.post(
             "/chat", json={"message": "CS 351", "thread_id": first["thread_id"]}
         ).json()
-    assert second["tool_calls"][0]["args"] == {
+        kept = stored(api, first["thread_id"])
+    assert kept["tool_calls"][0]["args"] == {
         "course": "CS 450",
         "completed_courses": ["CS 351"],
         "grades": None,
         "in_progress_courses": None,
     }
-    assert [m["role"] for m in second["state"]["messages"]] == ["user", "assistant"] * 2
-    assert second["state"]["pending_field"] is None
+    assert [m["role"] for m in kept["messages"]] == ["user", "assistant"] * 2
+    assert second["pending_field"] is None

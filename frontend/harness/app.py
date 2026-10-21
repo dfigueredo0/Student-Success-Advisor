@@ -1,6 +1,6 @@
 """Debug harness for the chat API: messages, state, tool calls, trace link.
 
-make api        # in one terminal
+make api-debug  # in one terminal (normal `make api` hides state and tool calls)
 make harness    # in another
 """
 
@@ -33,8 +33,14 @@ if prompt := st.chat_input("Ask the advisor, e.g. 'Can I take CS 450?'"):
     except httpx.HTTPError as exc:
         st.error(f"API request failed: {exc}")
 
+# State and tool calls hold the student's courses and grades, so the API only returns them
+# in debug mode: run the API with `make api-debug` for this page.
+state = (last or {}).get("state")
+if last and state is None:
+    st.warning("State and tool calls are hidden outside debug mode. Run `make api-debug`.")
+
 with chat_col:
-    for m in last["state"]["messages"] if last else []:
+    for m in state["messages"] if state else []:
         st.chat_message(m["role"]).write(m["content"])
 
 with debug_col:
@@ -47,4 +53,4 @@ with debug_col:
         st.subheader("Citations")
         st.json(last["citations"] or [])
         st.subheader("State")
-        st.json({k: v for k, v in last["state"].items() if k != "messages"})
+        st.json({k: v for k, v in state.items() if k != "messages"} if state else {})
