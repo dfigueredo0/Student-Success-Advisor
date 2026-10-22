@@ -65,7 +65,11 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
     ),
     (
         re.compile(
-            r"\bgraduat\w*|\bdegree\s+(audit|progress|requirements?)|\bon track\b"
+            # Graduation as a degree question ("when can I graduate"), not a time reference
+            # ("after graduating, I want to work in security" is career advice).
+            r"\bgraduation\b|\b(when|will|can|could)\b.*\bgraduate\b"
+            r"|\bgraduate\s+(on time|early|late)\b"
+            r"|\bdegree\s+(audit|progress|requirements?)|\bon track\b"
             r"|\brequirements?\b.*\b(left|remaining|missing|degree|major)\b"
             r"|\bcredits?\s+(left|remaining|needed|do i need)",
             re.I,
@@ -76,7 +80,7 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
     ),
     (
         re.compile(
-            r"\bcareers?\b|\b(jobs?|internships?)\b|\bbecome an?\b|\bwork as\b"
+            r"\bcareers?\b|\b(jobs?|internships?)\b|\bbecome an?\b|\bwork (as|in)\b"
             r"|\bskills?\b.*\b(need|build|learn|develop|for)\b",
             re.I,
         ),
@@ -88,9 +92,10 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
         re.compile(
             r"\b(what|which)\b.*\b(courses?|classes)\b.*\b(take|register|enroll|sign up)\b"
             r"|\bwhat should i (take|register|enroll|sign up)"
-            r"|\b(recommend|suggest)\w*\b.*\b(courses?|classes|schedule)"
+            r"|\b(recommend|suggest)\w*\b.*\b(courses?|classes|electives?|schedule)"
+            r"|\b(pick|choose)\b.*\b(courses?|classes|electives?)\b"
             r"|\b(plan|build)\b.*\b(semester|term|schedule)\b"
-            r"|\bnext\s+(semester|term|fall|spring|summer)\b",
+            r"|\bnext\s+(semester|term|year|fall|spring|summer)\b",
             re.I,
         ),
         "plan_next_term",
@@ -100,7 +105,7 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
     (
         re.compile(
             r"\b(what\s+is|what's|tell me about|describe|info|information|details?|"
-            r"who teaches|when is|how many credits)\b.*\b" + _CODE,
+            r"who teaches|when is|how many credits|seats?|sections?)\b.*\b" + _CODE,
             re.I,
         ),
         "course_info",
@@ -118,12 +123,6 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
         True,
     ),
     (
-        re.compile(r"\b(can|could|may|am)\b.*\b(take|enroll|register|eligible)\b", re.I),
-        "check_eligibility",
-        0.9,
-        True,
-    ),
-    (
         re.compile(
             r"^\s*i\s*('ve|\s+have)?\s*(already\s+)?(taken|took|completed|passed|finished)\b",
             re.I,
@@ -134,7 +133,9 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
     ),
     (re.compile(rf"^\s*{_CODE}\s*\??\s*$", re.I), "course_info", 0.8, False),
     (
-        re.compile(r"^\s*(hi|hello|hey|help)\b|\bwhat can you do\b|\bwho are you\b", re.I),
+        re.compile(
+            r"^\s*(hi|hello|hey|help)\s*[!.?]*\s*$|\bwhat can you do\b|\bwho are you\b", re.I
+        ),
         "help",
         0.9,
         True,
