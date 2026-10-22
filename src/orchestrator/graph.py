@@ -1,5 +1,9 @@
 """Orchestrator graph: router -> one agent -> merge.
 
+Short-term memory is the thread's own `messages` (checkpointed per thread_id): the router's
+model and the agent's follow-up filler (orchestrator.followup) both read the conversation
+before the latest message.
+
 Agents never link to each other; every hop goes router -> agent -> merge, and
 `tests/unit/test_graph_structure.py` enforces that on the compiled graph.
 """
@@ -15,6 +19,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agents.base import Agent
 from agents.career_advisor import CareerAdvisor
 from agents.college_advisor import CollegeAdvisor
+from orchestrator.followup import Filler, fill_slots
 from orchestrator.merge import merge
 from orchestrator.router import Classifier, ollama_classify, regex_route, route
 from orchestrator.state import State
@@ -25,6 +30,7 @@ def build_graph(
     *,
     agents: Iterable[Agent] | None = None,
     classify: Classifier = ollama_classify,
+    fill: Filler = fill_slots,
 ) -> CompiledStateGraph:
     by_name = {a.name: a for a in (agents or [CollegeAdvisor(), CareerAdvisor()])}
 
@@ -38,7 +44,8 @@ def build_graph(
                 return {}
             reset: dict[str, Any] = {"slots": {}, "pending_field": None}
         else:
-            r, reset = route(text, classify), {}
+            earlier, previous = state["messages"][:-1], state.get("intent")
+            r, reset = route(text, classify, history=earlier, previous=previous), {}
         if r.prompt_version:
             get_client().update_current_span(
                 version=r.prompt_version, metadata={"prompt_version": r.prompt_version}
@@ -53,12 +60,17 @@ def build_graph(
 
     def agent_node(agent: Agent):
         def node(state: State) -> dict[str, Any]:
+            text, earlier = state["messages"][-1]["content"], state["messages"][:-1]
+            pending = state.get("pending_field")
             result = agent.run(
                 state["intent"],
-                state["messages"][-1]["content"],
+                text,
                 state.get("slots") or {},
-                state.get("pending_field"),
+                pending,
                 state.get("profile") or {},
+                # Only a new request can be a follow-up. A first message has nothing to read it
+                # against, and an answer to the agent's question leaves the next field to ask.
+                (lambda fields: fill(fields, text, earlier)) if earlier and not pending else None,
             )
             return {
                 "agent_results": [result],

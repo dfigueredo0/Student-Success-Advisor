@@ -6,7 +6,10 @@
 
 Gold intents trace to the Researcher's survey areas (data/research_findings.json, F02/F06/
 F07/F08/F10); the wording is ours, not collected student messages. Out-of-scope items have
-intent null: the right answer is a clarify. Results go to eval/results/.
+intent null: the right answer is a clarify. Follow-up items carry the conversation before the
+message in `history` ({"role", "content"} messages), which the model stage sees and the pattern
+stage does not, and the intent of its last request in `previous_intent`. Results go to
+eval/results/.
 """
 
 import argparse
@@ -18,6 +21,7 @@ from typing import Any
 
 from eval.metrics import score
 from orchestrator.router import (
+    FOLLOW_UP,
     ROUTER_PROMPT,
     gateway_complete,
     ollama_classify,
@@ -63,18 +67,31 @@ class Gateway:
 
 
 def predict(
-    text: str, mode: str, threshold: float, gateway: Gateway
+    text: str,
+    mode: str,
+    threshold: float,
+    gateway: Gateway,
+    history: list[dict[str, str]] | None = None,
+    previous: str | None = None,
 ) -> tuple[str | None, str, float]:
     """(intent or None for clarify, stage that decided, confidence)."""
     if mode == "regex":
         hit = regex_route(text)
         return (hit.intent, "regex", hit.confidence) if hit else (None, "clarify", 0.0)
     if mode == "model":
-        intent, confidence = ollama_classify(text, gateway)
+        intent, confidence = ollama_classify(text, history, gateway)
+        if intent == FOLLOW_UP:
+            intent = previous
         if intent is not None and confidence >= threshold:
             return intent, "model", confidence
         return None, "clarify", confidence
-    r = route(text, classify=lambda t: ollama_classify(t, gateway), threshold=threshold)
+    r = route(
+        text,
+        classify=lambda t, h: ollama_classify(t, h, gateway),
+        threshold=threshold,
+        history=history,
+        previous=previous,
+    )
     return r.intent, r.source, r.confidence
 
 
@@ -84,7 +101,9 @@ def run(mode: str) -> dict[str, Any]:
     gateway = Gateway()
     for item in load_gold():
         gateway.error = gateway.ms = None
-        predicted, stage, confidence = predict(item["text"], mode, threshold, gateway)
+        predicted, stage, confidence = predict(
+            item["text"], mode, threshold, gateway, item.get("history"), item.get("previous_intent")
+        )
         rows.append(
             {
                 "id": item["id"],

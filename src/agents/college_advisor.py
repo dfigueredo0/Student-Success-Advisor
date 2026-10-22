@@ -1,14 +1,15 @@
 """College Advisor: course planning, prerequisites, course lookup and topic search.
 
 Answers are templated from tool results (never free-generated) so every fact is grounded
-and cited; the model only routes. Replies are plain text: the chat panel renders innerText.
+and cited; the model only routes and reads follow-ups ("can I take the first one?") into
+fields. Replies are plain text: the chat panel renders innerText.
 """
 
 import re
 from collections.abc import Callable
 from typing import Any
 
-from agents.base import Agent, AgentResult, Field, Scaffold
+from agents.base import Agent, AgentResult, Field, Resolve, Scaffold
 from tools.advisor.catalog import get_course_info, search_courses
 from tools.advisor.check_prerequisites import check_prerequisites
 from tools.advisor.get_degree_progress import get_degree_progress
@@ -422,6 +423,7 @@ class CollegeAdvisor(Agent):
         slots: dict[str, Any],
         pending: str | None,
         profile: dict[str, Any] | None = None,
+        resolve: Resolve | None = None,
     ) -> AgentResult:
         profile = dict(profile or {})
         if intent == "help":
@@ -433,7 +435,7 @@ class CollegeAdvisor(Agent):
         # "Can I take CS 450? I've taken CS 351" - remember the courses after the cue.
         if pending != "completed_courses" and (cue := _COMPLETED_CUE.search(text)):
             _remember_completed(profile, _codes(text[cue.end() :]))
-        return super().run(intent, text, slots, pending, profile)
+        return super().run(intent, text, slots, pending, profile, resolve)
 
     def _greet(self, profile: dict[str, Any]) -> AgentResult:
         greeted = profile.get("greetings", 0)

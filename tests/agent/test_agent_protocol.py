@@ -5,11 +5,12 @@ from typing import Any
 
 import httpx
 import pytest
+from langgraph.checkpoint.memory import InMemorySaver
 
 from agents.college_advisor import CollegeAdvisor
 from orchestrator import graph as graph_module
 from orchestrator.graph import build_graph
-from orchestrator.router import CLARIFY_QUESTION, ROUTER_PROMPT
+from orchestrator.router import CLARIFY_QUESTION, ROUTER_PROMPT, route
 from orchestrator.state import turn_input
 from tests.agent.fakes import FakeLLM, FakeTool, eligibility_result
 
@@ -130,3 +131,74 @@ def test_regex_route_has_no_prompt_version() -> None:
     check = FakeTool("check_prerequisites", eligibility_result())
     graph = build_graph(agents=[advisor(check)], classify=FakeLLM().classify)
     assert graph.invoke(turn_input("Can I take CS 450?"))["prompt_version"] is None
+
+
+def test_follow_up_resolves_a_course_from_an_earlier_answer() -> None:
+    check = FakeTool("check_prerequisites", eligibility_result("CS 484"))
+    search = FakeTool(
+        "search_courses",
+        {
+            "query": "machine learning",
+            "results": [
+                {"code": "CS 484", "title": "Machine Learning", "credits": 3.0, "summary": "ML"}
+            ],
+            "citations": [{"source": "IIT Banner course catalog, CS 484"}],
+        },
+    )
+    llm = FakeLLM(
+        FakeLLM.route("find_courses", 0.9),
+        FakeLLM.route("check_eligibility", 0.9),
+        # The course is in the advisor's list. Completed courses are facts about the student,
+        # so one only the advisor mentioned is not taken.
+        {"course": "CS 484", "completed_courses": "CS 484"},
+    )
+    graph = build_graph(
+        InMemorySaver(),
+        agents=[CollegeAdvisor(check, search=search)],
+        classify=llm.classify,
+        fill=llm.fill,
+    )
+    config = {"configurable": {"thread_id": "t"}}
+    graph.invoke(turn_input("Show me something on machine learning"), config)
+
+    state = graph.invoke(turn_input("can I take the first one?"), config)
+    assert state["slots"] == {"course": "CS 484"}
+    assert state["pending_field"] == "completed_courses" and check.calls == []
+
+    graph.invoke(turn_input("CS 351"), config)
+    assert check.calls[0]["course"] == "CS 484"
+    assert check.calls[0]["completed_courses"] == ["CS 351"]
+
+
+def test_follow_up_does_not_overwrite_remembered_courses_with_a_guess() -> None:
+    check = FakeTool("check_prerequisites", eligibility_result("CS 484"))
+    llm = FakeLLM(
+        FakeLLM.route("check_eligibility", 0.9),
+        # The student's completed courses are already known; this message names none.
+        {"course": "CS 484", "completed_courses": "CS 115"},
+    )
+    info = FakeTool("get_course_info", {"course": "CS 484", "found": False})
+    graph = build_graph(
+        InMemorySaver(),
+        agents=[CollegeAdvisor(check, course_info=info)],
+        classify=llm.classify,
+        fill=llm.fill,
+    )
+    config = {"configurable": {"thread_id": "t"}}
+    graph.invoke(turn_input("I've taken CS 115 and CS 116"), config)
+    graph.invoke(turn_input("Tell me about CS 484"), config)
+
+    graph.invoke(turn_input("is that one open to me"), config)
+
+    assert check.calls[0]["course"] == "CS 484"
+    assert check.calls[0]["completed_courses"] == ["CS 115", "CS 116"]
+
+
+@pytest.mark.parametrize(
+    ("previous", "intent"), [("check_eligibility", "check_eligibility"), (None, None)]
+)
+def test_model_follow_up_continues_the_previous_request(
+    previous: str | None, intent: str | None
+) -> None:
+    llm = FakeLLM(FakeLLM.route("follow_up", 0.9))
+    assert route("what about CS 485?", llm.classify, previous=previous).intent == intent
