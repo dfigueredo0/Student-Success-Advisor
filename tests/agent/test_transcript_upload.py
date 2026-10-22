@@ -64,7 +64,7 @@ def test_upload_seeds_profile_and_advisor_does_not_ask(api: tuple[TestClient, Fa
 def test_upload_keeps_courses_mentioned_in_chat(api: tuple[TestClient, FakeTool]) -> None:
     client, _ = api
     thread = client.post("/chat", json={"message": "I've taken CS 100"}).json()["thread_id"]
-    client.post(f"/transcript?thread_id={thread}", content=b"%PDF-")
+    client.post("/transcript", content=b"%PDF-", headers={"X-Thread-Id": thread})
     state = client.app.state.graph.get_state({"configurable": {"thread_id": thread}}).values
     assert state["profile"]["completed_courses"][0] == "CS 100"
     assert "CS 331" in state["profile"]["completed_courses"]
@@ -74,7 +74,7 @@ def test_rejected_upload_is_422_and_leaves_profile_alone(
     api: tuple[TestClient, FakeTool],
 ) -> None:
     client, _ = api
-    resp = client.post("/transcript?thread_id=t1", content=b"not a pdf")
+    resp = client.post("/transcript", content=b"not a pdf", headers={"X-Thread-Id": "t1"})
     assert resp.status_code == 422
     assert "PDF" in resp.json()["detail"]
     assert client.app.state.graph.get_state({"configurable": {"thread_id": "t1"}}).values == {}
