@@ -4,14 +4,15 @@ import json
 from functools import partial
 from typing import Any
 
+from orchestrator.followup import Filler, fill_slots
 from orchestrator.router import Classifier, ollama_classify
 
 
 class FakeLLM:
     """Scripted gateway: answers chat-completion requests from a queue and records each one.
 
-    Plugs into the router where the gateway would be (ollama_classify's `complete`), so the
-    real versioned prompt, JSON schema, and reply parsing all run. A reply may be a dict
+    Plugs in where the gateway would be (the `complete` of ollama_classify and fill_slots), so
+    the real versioned prompts, JSON schemas, and reply parsing all run. A reply may be a dict
     (sent as JSON), a raw string, or an exception to raise. An unscripted call fails the test,
     which is how a test asserts the model was never asked.
     """
@@ -31,6 +32,10 @@ class FakeLLM:
     @property
     def classify(self) -> Classifier:
         return partial(ollama_classify, complete=self)
+
+    @property
+    def fill(self) -> Filler:
+        return partial(fill_slots, complete=self)
 
     @staticmethod
     def route(intent: str, confidence: float) -> dict[str, Any]:

@@ -26,8 +26,9 @@ def pdf(monkeypatch: pytest.MonkeyPatch) -> None:
 def api() -> Iterator[tuple[TestClient, FakeTool]]:
     check = FakeTool("check_prerequisites", eligibility_result())
     # No `with`: lifespan (Postgres checkpointer) stays off; the graph is in memory.
+    llm = FakeLLM()
     app.state.graph = build_graph(
-        InMemorySaver(), agents=[CollegeAdvisor(check)], classify=FakeLLM().classify
+        InMemorySaver(), agents=[CollegeAdvisor(check)], classify=llm.classify, fill=llm.fill
     )
     yield TestClient(app), check
     del app.state.graph

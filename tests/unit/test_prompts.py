@@ -8,20 +8,32 @@ from agents.prompts import load_prompt
 
 def test_router_prompt_is_versioned_and_renders() -> None:
     p = load_prompt("router_intent")
-    assert p.version == "router_intent@1"
-    text = p.render(intents="- a: b", examples="Message: x\nIntent: a", message="hi")
+    assert p.version == "router_intent@2"
+    text = p.render(
+        intents="- a: b", examples="Message: x\nIntent: a", history="(none)", message="hi"
+    )
     assert text.startswith("You route messages") and text.endswith("Message: hi\nIntent:")
+    assert "Conversation so far:\n(none)\n" in text
     assert '{"intent": "<intent>"' in text  # literal JSON braces survive templating
 
 
 def test_message_text_is_not_reinterpreted_as_template() -> None:
     p = load_prompt("router_intent")
-    assert "$intents ${x}" in p.render(intents="", examples="", message="$intents ${x}")
+    text = p.render(intents="", examples="", history="$x", message="$intents ${x}")
+    assert "$intents ${x}" in text and "\n$x\n" in text
 
 
 def test_missing_placeholder_is_an_error() -> None:
     with pytest.raises(KeyError):
-        load_prompt("router_intent").render(intents="", examples="")
+        load_prompt("router_intent").render(intents="", examples="", message="hi")
+
+
+def test_followup_prompt_is_versioned_and_renders() -> None:
+    p = load_prompt("followup_slots")
+    assert p.version == "followup_slots@1"
+    text = p.render(fields="- course: Which course?", history="(none)", message="the first one")
+    assert text.endswith("Reply as JSON with one string per detail.")
+    assert "Latest message: the first one\n" in text and "$" not in text
 
 
 @pytest.mark.parametrize(

@@ -15,13 +15,27 @@ from agents.college_advisor import (
 )
 from domain.prereq import evaluate
 from orchestrator.graph import build_graph
-from orchestrator.router import route
+from orchestrator.router import regex_route, route
 from orchestrator.state import turn_input
 from tools.advisor.check_prerequisites import eligibility_fields
 
+# What the model says for the messages these tests send that no pattern routes.
+MODEL = {
+    "What courses can I take in Spring Year 2?": "plan_next_term",
+    "What should I take next semester?": "plan_next_term",
+    "Can you recommend some classes for me?": "plan_next_term",
+    "CS 331": "course_info",
+    "Are there any courses on machine learning?": "find_courses",
+    "Any courses on databases?": "find_courses",
+}
 
-def no_model(text: str) -> tuple[str | None, float]:
-    return None, 0.0
+
+def model(text: str, history: list[dict[str, str]]) -> tuple[str | None, float]:
+    return (MODEL[text], 0.9) if text in MODEL else (None, 0.0)
+
+
+def no_followup(fields: Any, text: str, history: Any) -> dict[str, str]:
+    return {}
 
 
 class Recorder:
@@ -121,7 +135,9 @@ class Chat:
     """Multi-turn conversation through the real graph with fake tools."""
 
     def __init__(self, advisor: CollegeAdvisor) -> None:
-        self.graph = build_graph(InMemorySaver(), agents=[advisor], classify=no_model)
+        self.graph = build_graph(
+            InMemorySaver(), agents=[advisor], classify=model, fill=no_followup
+        )
         self.config = {"configurable": {"thread_id": "t"}}
 
     def say(self, text: str) -> dict[str, Any]:
@@ -151,7 +167,28 @@ class Chat:
     ],
 )
 def test_routing(message: str, intent: str) -> None:
-    assert route(message, no_model).intent == intent
+    assert route(message, model).intent == intent
+
+
+@pytest.mark.parametrize(
+    "message",
+    [
+        *MODEL,
+        "I took CS 331, what should I take next?",  # planning, not a record of courses
+        "CS 485?",  # after "Can I take CS 450?" this is a prerequisite check
+        "and SQL?",
+        "After graduation I want to work in security",
+    ],
+)
+def test_only_near_certain_wordings_skip_the_model(message: str) -> None:
+    assert regex_route(message) is None
+
+
+def test_short_and_follow_up_repeats_the_previous_request() -> None:
+    assert route("and CS 350?", model, previous="course_info").intent == "course_info"
+    assert route("and CS 350?", model).intent is None  # nothing to follow up on
+    # Longer than "and" plus three words: not sure enough, so the model decides.
+    assert route("and when can I graduate?", model, previous="career_advice").intent is None
 
 
 def test_plan_asks_completed_once_and_remembers_it() -> None:

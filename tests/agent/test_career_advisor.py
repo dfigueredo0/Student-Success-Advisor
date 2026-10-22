@@ -37,8 +37,11 @@ class Chat:
         self.find = find or FakeTool("find_courses_for_skills", career_result())
         self.check = FakeTool("check_prerequisites", eligibility_result())
         agents = [CollegeAdvisor(self.check), CareerAdvisor(self.find)]
-        classify = (llm or FakeLLM()).classify
-        self.graph = build_graph(InMemorySaver(), agents=agents, classify=classify)
+        # Default: the model routes the opening career question, and nothing after it.
+        self.llm = llm or FakeLLM(FakeLLM.route("career_advice", 0.9))
+        self.graph = build_graph(
+            InMemorySaver(), agents=agents, classify=self.llm.classify, fill=self.llm.fill
+        )
         self.config = {"configurable": {"thread_id": "t"}}
 
     def say(self, text: str) -> dict[str, Any]:
@@ -53,9 +56,10 @@ class Chat:
         "How do I get an internship?",
     ],
 )
-def test_career_messages_route_to_career_agent(message: str) -> None:
-    r = route(message, FakeLLM().classify)
-    assert (r.intent, r.agent) == ("career_advice", "career_advisor")
+def test_career_messages_are_routed_by_the_model(message: str) -> None:
+    llm = FakeLLM(FakeLLM.route("career_advice", 0.9))
+    r = route(message, llm.classify)
+    assert (r.intent, r.agent, r.source) == ("career_advice", "career_advisor", "model")
 
 
 def test_scaffold_asks_one_field_per_turn_then_calls_tool_and_cites() -> None:
@@ -88,6 +92,55 @@ def test_model_routes_vague_career_question_and_goal_is_asked() -> None:
     state = chat.say("I am not sure what I want to do after college")
     assert (state["route_source"], state["route"]) == ("model", "career_advisor")
     assert state["pending_field"] == "career_goal"
+
+
+def _python_then(*replies: dict[str, Any]) -> Chat:
+    """A finished Python lookup for a data scientist; `replies` script the turns after it."""
+    chat = Chat(FakeLLM(FakeLLM.route("career_advice", 0.9), *replies))
+    chat.say("What skills do I need to become a data scientist?")
+    chat.say("none")
+    chat.say("Python")
+    return chat
+
+
+def test_follow_up_keeps_the_goal_and_looks_up_only_the_new_skill() -> None:
+    chat = _python_then({"desired_skills": "SQL"})
+
+    state = chat.say("and for SQL?")
+
+    assert chat.find.calls[-1] == {
+        "career_goal": "data scientist",
+        "current_skills": [],
+        "desired_skills": ["SQL"],
+    }
+    # "and ..." right after a request is that request again: no routing call, one fill call.
+    assert state["route_source"] == "regex" and state["pending_field"] is None
+    assert len(chat.llm.requests) == 2
+    assert "CS 484" in state["answer"] and state["citations"]
+    fill_prompt = chat.llm.requests[-1]["messages"][0]["content"]
+    # The conversation, without citation lines or the advisor's "(e.g. Python, SQL)".
+    assert "Student: Python\nAdvisor: Courses in the IIT catalog" in fill_prompt
+    assert "[1] IIT Banner" not in fill_prompt and "e.g." not in fill_prompt
+    assert "- desired_skills: Which skills do you want to build for that career?\n" in fill_prompt
+
+
+def test_model_spotted_follow_up_continues_career_advice() -> None:
+    chat = _python_then(FakeLLM.route("follow_up", 0.9), {"desired_skills": "machine learning"})
+
+    state = chat.say("what about machine learning?")
+
+    assert state["intent"] == "career_advice" and state["route_source"] == "model"
+    assert chat.find.calls[-1]["desired_skills"] == ["machine learning"]
+    route_prompt = chat.llm.requests[1]["messages"][0]["content"]
+    assert "Student: Python\nAdvisor: Courses in the IIT catalog" in route_prompt
+    assert route_prompt.endswith("Message: what about machine learning?\nIntent:")
+
+
+def test_follow_up_value_not_in_the_conversation_is_ignored() -> None:
+    chat = _python_then({"desired_skills": "Rust"})
+    state = chat.say("and for SQL?")
+    assert len(chat.find.calls) == 1  # only the Python lookup
+    assert state["pending_field"] == "desired_skills"  # asks instead of guessing
 
 
 def test_none_is_a_valid_current_skills_answer() -> None:

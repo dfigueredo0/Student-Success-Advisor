@@ -1,8 +1,9 @@
 """Agent base + scaffolds.
 
 A scaffold declares the fields an intent needs before its tool may run. The agent
-fills what it can from the user's message, asks for the first missing field (one
-question per turn), and only calls the tool once every field is present.
+fills what it can from the user's message, then (for a follow-up such as "and SQL?")
+from the conversation through the orchestrator's `resolve`, asks for the first missing
+field (one question per turn), and only calls the tool once every field is present.
 """
 
 import logging
@@ -30,6 +31,11 @@ class Field:
     needed: Callable[[dict[str, Any]], bool] = _always
     # Kept in the student profile for the rest of the conversation, so it is asked once.
     remember: bool = False
+
+
+# Missing fields -> field name -> answer text read from the conversation, as the student would
+# have answered the field's question. Given by the orchestrator once there is a conversation.
+Resolve = Callable[[list[Field]], dict[str, str]]
 
 
 @dataclass(frozen=True)
@@ -68,6 +74,7 @@ class Agent:
         slots: dict[str, Any],
         pending: str | None,
         profile: dict[str, Any] | None = None,
+        resolve: Resolve | None = None,
     ) -> AgentResult:
         scaffold = self.scaffolds[intent]
         slots, profile = dict(slots), dict(profile or {})
@@ -77,6 +84,17 @@ class Agent:
                 if value is None and f.remember:
                     value = profile.get(f.name)
                 if value is not None:
+                    slots[f.name] = value
+                    if f.remember:
+                        profile[f.name] = value
+
+        # Only missing fields: a remembered one stays as the student gave it. Offering those
+        # to the model too made qwen3:1.7b drop the new value ("and for SQL?" -> Python).
+        unknown = [f for f in scaffold.fields if f.name not in slots and f.needed(slots)]
+        if unknown and resolve:
+            answers = resolve(unknown)
+            for f in unknown:
+                if f.name in answers and (value := f.extract(answers[f.name], True)) is not None:
                     slots[f.name] = value
                     if f.remember:
                         profile[f.name] = value
