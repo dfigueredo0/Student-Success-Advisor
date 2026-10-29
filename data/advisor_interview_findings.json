@@ -1,0 +1,138 @@
+{
+  "project": "AI Student Success Advisor",
+  "research_type": "advisor_interview",
+  "interview_id": "advisor_001",
+  "interview_status": "single_interview_summary_incomplete_research_round",
+  "participant": {
+    "role": "Academic Advisor",
+    "academic_area": [
+      "Applied Mathematics",
+      "Data Science"
+    ],
+    "name_stored": false
+  },
+  "source_note": "Structured from the uploaded interview summary. Findings reflect one advisor interview and should not be treated as representative of all advisors.",
+  "themes": [
+    {
+      "theme": "Course planning and sequencing",
+      "evidence_summary": "Students frequently ask what to take next, whether courses count toward the degree, whether prerequisites are satisfied, and whether they are on track to graduate.",
+      "importance": "high",
+      "product_implications": [
+        "Support semester course planning",
+        "Check prerequisite chains and course sequencing",
+        "Show how recommended courses satisfy degree requirements"
+      ]
+    },
+    {
+      "theme": "Career planning and academic-to-career alignment",
+      "evidence_summary": "Students struggle to connect broad fields such as applied math and data science to specific careers, skills, courses, projects, and experiences.",
+      "importance": "high",
+      "product_implications": [
+        "Map target careers to required skills",
+        "Connect courses and projects to career goals",
+        "Provide career guidance earlier in the program"
+      ]
+    },
+    {
+      "theme": "Centralized access to advising information",
+      "evidence_summary": "Advising information exists across multiple university pages and systems, which can create confusion and lead students to rely on peers.",
+      "importance": "high",
+      "product_implications": [
+        "Provide a single interface for advising questions",
+        "Prefer official university sources",
+        "Display citations or source references with answers"
+      ]
+    },
+    {
+      "theme": "Repetitive advising workload",
+      "evidence_summary": "Repeated questions include prerequisites, next-semester courses, remaining credits, elective eligibility, graduation timing, and unavailable required courses.",
+      "importance": "high",
+      "product_implications": [
+        "Automate routine, rule-based advising questions",
+        "Use AI to prepare students before human advising meetings",
+        "Reserve advisor time for complex or individualized cases"
+      ]
+    },
+    {
+      "theme": "Human advisor involvement",
+      "evidence_summary": "Personal, unusual, high-impact, or exception-based decisions should involve a human advisor.",
+      "importance": "critical",
+      "product_implications": [
+        "Implement escalation to a human advisor",
+        "Avoid confident recommendations when uncertainty or exceptions are detected",
+        "Flag cases involving academic difficulty, major changes, withdrawals, transfer-credit issues, substitutions, or special approvals"
+      ]
+    },
+    {
+      "theme": "Data required for accurate recommendations",
+      "evidence_summary": "Accurate advising requires both student-specific information and current university information.",
+      "importance": "critical",
+      "required_data": [
+        "major",
+        "catalog_year",
+        "completed_courses",
+        "current_courses",
+        "remaining_degree_requirements",
+        "prerequisite_rules",
+        "current_course_offerings",
+        "grades_when_required",
+        "career_interests",
+        "skills",
+        "projects",
+        "resume_information_optional"
+      ]
+    },
+    {
+      "theme": "Transparency and source traceability",
+      "evidence_summary": "The advisor considered citations and source explanations extremely important for trust, accountability, and error checking.",
+      "importance": "critical",
+      "product_implications": [
+        "Show the source used for prerequisite and degree-requirement decisions",
+        "Explain why a recommendation was made",
+        "Make it easy for students and advisors to verify AI outputs"
+      ]
+    },
+    {
+      "theme": "Proactive advising",
+      "evidence_summary": "Students often seek help only when registration is near or a problem already exists; earlier guidance could prevent issues.",
+      "importance": "high",
+      "product_implications": [
+        "Send reminders about upcoming requirements",
+        "Warn students about prerequisite chains and limited course availability",
+        "Surface career-relevant suggestions before the final year"
+      ]
+    }
+  ],
+  "human_escalation_triggers": [
+    "academic_struggle",
+    "major_change",
+    "course_withdrawal",
+    "graduation_risk",
+    "course_substitution",
+    "special_approval",
+    "transfer_credit_exception",
+    "ambiguous_or_conflicting_policy",
+    "uncertain_recommendation",
+    "high_impact_academic_decision"
+  ],
+  "key_research_findings": [
+    "Course planning is a major recurring advising need.",
+    "Career guidance should connect academic choices to skills and career paths earlier.",
+    "Routine advising questions are candidates for AI support, but complex exceptions require human judgment.",
+    "Source transparency and current institutional data are necessary for trustworthy recommendations.",
+    "The AI should support advisors rather than fully replace them."
+  ],
+  "limitations": [
+    "This file represents one advisor interview.",
+    "The uploaded document is labeled as not completed.",
+    "The participant represents Applied Mathematics/Data Science and may not reflect other departments.",
+    "Product implications are interpretations and should be validated across additional interviews."
+  ],
+  "recommended_next_research_steps": [
+    "Interview advisors from additional departments.",
+    "Compare repeated themes across interviews.",
+    "Compare advisor findings with student survey results.",
+    "Promote recurring findings into validated product requirements only after multiple sources support them.",
+    "Create a use-case priority matrix using student demand, advisor support, impact, and technical feasibility."
+  ]
+}
