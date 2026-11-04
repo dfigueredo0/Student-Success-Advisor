@@ -56,6 +56,7 @@ def merge_into_profile(profile: dict[str, Any], record: dict[str, Any]) -> dict[
     out["in_progress_courses"] = record["in_progress_courses"]
     if record["major"]:
         out["major"] = record["major"]
+    out.pop("imported", None)  # a real transcript now backs the grades
     return out
 
 

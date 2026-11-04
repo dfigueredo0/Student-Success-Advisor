@@ -426,3 +426,51 @@ function appendMessage(text, sender) {
     chatLog.appendChild(msg);
     chatLog.scrollTop = chatLog.scrollHeight;
 }
+
+/* -------------------------------------------------------------
+   8. SAVE / LOAD CHAT (no accounts: the student keeps the file)
+------------------------------------------------------------- */
+async function saveChat() {
+    if (!chatThreadId) {
+        appendMessage('There is nothing to save yet. Ask me something first.', 'system');
+        return;
+    }
+    try {
+        const res = await fetch('/chat/export', { headers: { 'X-Thread-Id': chatThreadId } });
+        if (!res.ok) throw new Error(await readError(res));
+        const blob = new Blob([JSON.stringify(await res.json(), null, 2)], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = `advisor-chat-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(link.href);
+    } catch (err) {
+        appendMessage(`Couldn't save the chat: ${err.message}`, 'system');
+    }
+}
+
+async function loadChat(input) {
+    const file = input.files[0];
+    input.value = '';  // choosing the same file again still triggers onchange
+    if (!file) return;
+    try {
+        const res = await fetch('/chat/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: await file.text(),
+        });
+        if (!res.ok) throw new Error(await readError(res));
+        const data = await res.json();
+        chatThreadId = data.thread_id;
+        document.getElementById('chat-log').innerHTML = '';
+        // appendMessage uses innerText, so text from the file is never read as HTML.
+        data.messages.forEach(m => appendMessage(m.content, m.role === 'user' ? 'user' : 'system'));
+        appendMessage(
+            "I've loaded your courses from the saved chat. The messages above are for reference; " +
+            "I only remember your courses, grades and major.",
+            'system'
+        );
+    } catch (err) {
+        appendMessage(`Couldn't load that file: ${err.message}`, 'system');
+    }
+}
