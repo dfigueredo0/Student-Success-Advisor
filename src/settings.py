@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     # Dev-only: print each orchestrator step to the API terminal (api/debug.py)
     debug: bool = False
 
+    # Conversations with no activity for this long are deleted (no accounts, no export yet)
+    conversation_ttl_hours: int = 24
+
     # Postgres + pgvector
     database_url: str = "postgresql+psycopg://postgres:postgres@localhost:5433/ssa"
 
