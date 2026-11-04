@@ -462,6 +462,20 @@ header .logo {
     font-weight: bold;
     font-size: 13px;
     color: #333333;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+}
+
+.chat-header-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.chat-header-actions button {
+    font-size: 10px;
+    padding: 3px 6px;
 }
 
 .chat-prompts {

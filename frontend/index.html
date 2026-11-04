@@ -196,7 +196,12 @@
             <!-- RIGHT SIDE: AI ADVISOR ASSISTANT CHAT -->
             <div class="chat-container">
                 <div class="chat-header">
-                    AI Advisor Assistant
+                    <span>AI Advisor Assistant</span>
+                    <span class="chat-header-actions">
+                        <button class="btn-secondary" onclick="saveChat()" title="Download this conversation as a file">Save chat</button>
+                        <button class="btn-secondary" onclick="document.getElementById('chat-file-input').click()" title="Continue from a saved chat file">Load chat</button>
+                        <input type="file" id="chat-file-input" accept=".json,application/json" hidden onchange="loadChat(this)">
+                    </span>
                 </div>
 
                 <div class="chat-prompts">

@@ -11,7 +11,7 @@ from fastapi.staticfiles import StaticFiles
 from langfuse import Langfuse
 from langgraph.checkpoint.postgres import PostgresSaver
 
-from api.routes import chat, transcript
+from api.routes import chat, saved_chat, transcript
 from memory.retention import delete_stale_conversations
 from orchestrator.graph import build_graph
 from settings import get_settings
@@ -63,5 +63,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 app = FastAPI(title="Student Success Advisor", lifespan=lifespan)
 app.include_router(chat.router)
 app.include_router(transcript.router)
+app.include_router(saved_chat.router)
 # Mounted last so /chat and /docs win; html=True serves index.html at /.
 app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")

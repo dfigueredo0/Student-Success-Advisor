@@ -476,8 +476,11 @@ def _known_record(profile: dict[str, Any]) -> str | None:
     if not completed and not in_progress:
         return None
     grades = profile.get("grades") or {}
-    # Grades only ever come from POST /transcript.
-    source = "your uploaded transcript" if grades else "what you've told me"
+    # Grades only come from POST /transcript or a saved chat (POST /chat/import).
+    if profile.get("imported"):
+        source = "the saved chat you loaded"
+    else:
+        source = "your uploaded transcript" if grades else "what you've told me"
     shown = {c: "transfer" if g == "TR" else g for c, g in grades.items()}
     done = ", ".join(f"{c} ({shown[c]})" if c in shown else c for c in completed)
     lines = [f"Here's what I have from {source}:", f"- Completed: {done or 'none yet'}"]
