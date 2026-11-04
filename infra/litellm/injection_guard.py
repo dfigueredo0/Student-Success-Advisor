@@ -64,14 +64,32 @@ def message_texts(content: object) -> list[str]:
     return []
 
 
+def texts_to_check(data: dict) -> list[str]:
+    """The text a request is judged on.
+
+    Callers that put conversation history into the prompt (the router, follow-ups) name the
+    student's new message in metadata["guard_text"]. Only that is checked: earlier messages
+    were checked when they were new, and re-checking them would turn one false alarm into a
+    blocked conversation. The named text must appear in the prompt, so it can't stand in for
+    something else. Without it, every message is checked.
+    """
+    texts = [t for m in data.get("messages", []) for t in message_texts(m.get("content"))]
+    for key in ("metadata", "litellm_metadata"):
+        new = (data.get(key) or {}).get("guard_text")
+        if isinstance(new, str) and new and any(new in t for t in texts):
+            return [new]
+    return texts
+
+
+def looks_like_injection(text: str) -> bool:
+    return any(p.search(v) for p in INJECTION_PATTERNS for v in (text, normalize(text)))
+
+
 class PromptInjectionGuard(CustomGuardrail):
     async def async_pre_call_hook(self, user_api_key_dict, cache, data, call_type):
-        for message in data.get("messages", []):
-            for text in message_texts(message.get("content")):
-                variants = (text, normalize(text))
-                if any(p.search(v) for p in INJECTION_PATTERNS for v in variants):
-                    raise HTTPException(
-                        status_code=400,
-                        detail={"error": "Blocked by the prompt-injection guardrail"},
-                    )
+        if any(looks_like_injection(text) for text in texts_to_check(data)):
+            raise HTTPException(
+                status_code=400,
+                detail={"error": "Blocked by the prompt-injection guardrail"},
+            )
         return data

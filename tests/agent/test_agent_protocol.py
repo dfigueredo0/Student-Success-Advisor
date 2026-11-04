@@ -117,7 +117,10 @@ def test_classifier_uses_versioned_prompt_and_tags_the_span(
     state = graph.invoke(turn_input("is CS 450 open to me"))
 
     request = llm.requests[0]
-    assert request["metadata"] == {"prompt_version": ROUTER_PROMPT.version}
+    assert request["metadata"] == {
+        "prompt_version": ROUTER_PROMPT.version,
+        "guard_text": "is CS 450 open to me",  # the guardrail checks only the new message
+    }
     prompt = request["messages"][0]["content"]
     assert prompt.endswith("Message: is CS 450 open to me\nIntent:")
     assert "- check_eligibility:" in prompt and "$" not in prompt
