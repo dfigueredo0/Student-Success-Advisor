@@ -160,6 +160,9 @@ class Chat:
         ("CS 331", "course_info"),
         ("Are there any courses on machine learning?", "find_courses"),
         ("I've taken CS 115 and MATH 151", "record_courses"),
+        ("What's on my transcript?", "record_courses"),
+        ("What courses have I taken so far?", "record_courses"),
+        ("Show me my classes", "record_courses"),
         ("hi", "help"),
         ("hey there!", "help"),
         ("good morning", "help"),
@@ -233,6 +236,37 @@ def test_plan_leaves_out_courses_in_progress() -> None:
 
     assert tools.recommend.calls[-1]["in_progress_courses"] == ["CS 350"]
     assert "taking now (CS 350)" in answer
+
+
+def test_record_question_shows_what_the_advisor_has() -> None:
+    chat = Chat(Tools().advisor())
+    profile = {  # as POST /transcript leaves it
+        "completed_courses": ["MATH 151", "CS 115", "CS 331"],
+        "grades": {"MATH 151": "TR", "CS 115": "A", "CS 331": "C+"},
+        "in_progress_courses": ["CS 350"],
+        "major": "Computer Science, Computer Science",
+    }
+    chat.graph.update_state(chat.config, {"profile": profile}, as_node="merge")
+
+    state = chat.say("What's on my transcript?")
+
+    assert "your uploaded transcript" in state["answer"]
+    assert "MATH 151 (transfer), CS 115 (A), CS 331 (C+)" in state["answer"]
+    assert "Taking now: CS 350" in state["answer"]
+    assert "Major: Computer Science" in state["answer"]
+    assert state["pending_field"] is None
+
+
+def test_record_question_names_chat_as_the_source() -> None:
+    chat = Chat(Tools().advisor())
+    chat.say("I've taken CS 115 and CS 116")
+    answer = chat.say("What courses have I taken so far?")["answer"]
+    assert "what you've told me" in answer and "CS 115, CS 116" in answer
+
+
+def test_record_question_with_nothing_known_asks() -> None:
+    state = Chat(Tools().advisor()).say("What courses have I taken so far?")
+    assert state["pending_field"] == "completed_courses"
 
 
 def test_unavailable_requested_term_is_called_out() -> None:

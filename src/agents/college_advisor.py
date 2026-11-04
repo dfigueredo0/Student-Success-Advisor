@@ -451,6 +451,8 @@ class CollegeAdvisor(Agent):
 
     def _record(self, text: str, profile: dict[str, Any]) -> AgentResult:
         codes = _codes(text)
+        if not codes and (known := _known_record(profile)):
+            return self.reply(known, profile)  # "What's on my transcript?"
         if not codes:
             return self.reply(
                 "Which courses have you completed? List the codes, e.g. CS 115, MATH 151.",
@@ -465,6 +467,29 @@ class CollegeAdvisor(Agent):
             'Want suggestions? Ask "What should I take next semester?"',
             profile,
         )
+
+
+def _known_record(profile: dict[str, Any]) -> str | None:
+    """What the advisor has on the student and where it came from; None when it has nothing."""
+    completed = profile.get("completed_courses") or []
+    in_progress = profile.get("in_progress_courses") or []
+    if not completed and not in_progress:
+        return None
+    grades = profile.get("grades") or {}
+    # Grades only ever come from POST /transcript.
+    source = "your uploaded transcript" if grades else "what you've told me"
+    shown = {c: "transfer" if g == "TR" else g for c, g in grades.items()}
+    done = ", ".join(f"{c} ({shown[c]})" if c in shown else c for c in completed)
+    lines = [f"Here's what I have from {source}:", f"- Completed: {done or 'none yet'}"]
+    if in_progress:
+        lines.append(f"- Taking now: {', '.join(in_progress)}")
+    if major := profile.get("major"):
+        lines.append(f"- Major: {major}")
+    lines.append(
+        "I only keep your courses, grades and major, and only for this conversation. "
+        "If something's missing, tell me (e.g. \"I've taken CS 351\")."
+    )
+    return "\n".join(lines)
 
 
 def _remember_completed(profile: dict[str, Any], codes: list[str]) -> None:
