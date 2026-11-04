@@ -5,6 +5,7 @@ from fastapi import APIRouter, Request
 from langfuse import get_client, propagate_attributes
 from pydantic import BaseModel, Field
 
+from api.tracing import trace_session_id
 from orchestrator.state import turn_input
 from settings import get_settings
 
@@ -46,7 +47,7 @@ def chat(req: ChatRequest, request: Request) -> ChatResponse:
     # One request = one trace: every node and tool span nests under this root span.
     with (
         langfuse.start_as_current_observation(name="chat", input=req.message) as span,
-        propagate_attributes(session_id=thread_id),
+        propagate_attributes(session_id=trace_session_id(thread_id)),
     ):
         state = request.app.state.graph.invoke(
             turn_input(req.message), {"configurable": {"thread_id": thread_id}}

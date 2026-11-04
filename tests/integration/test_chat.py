@@ -6,6 +6,7 @@ from fastapi.testclient import TestClient
 from langfuse import get_client
 
 from api.main import app
+from api.tracing import trace_session_id
 
 
 def stored(api: TestClient, thread_id: str) -> dict[str, Any]:
@@ -35,7 +36,8 @@ def test_one_request_creates_one_trace_with_expected_spans(langfuse: httpx.Clien
         time.sleep(1)
     assert names == expected
 
-    traces = langfuse.get("/api/public/traces", params={"sessionId": body["thread_id"]})
+    session = trace_session_id(body["thread_id"])
+    traces = langfuse.get("/api/public/traces", params={"sessionId": session})
     assert [t["id"] for t in traces.json()["data"]] == [body["trace_id"]]
 
 

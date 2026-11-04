@@ -7,11 +7,12 @@ courses and major are merged into the thread's profile, so the advisor stops ask
 import uuid
 from typing import Any, Literal
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Header, HTTPException, Request
 from fastapi.concurrency import run_in_threadpool
 from langfuse import get_client, propagate_attributes
 from pydantic import BaseModel
 
+from api.tracing import trace_session_id
 from tools.advisor.parse_transcript import MAX_BYTES, TranscriptRejected, parse_transcript
 
 router = APIRouter()
@@ -61,7 +62,10 @@ def merge_into_profile(profile: dict[str, Any], record: dict[str, Any]) -> dict[
 # TODO: needs impl - bind thread_id to the authenticated student (api.auth), as for /chat.
 @router.post("/transcript")
 async def upload_transcript(
-    request: Request, thread_id: str | None = Query(default=None, max_length=64)
+    request: Request,
+    # A header, not a query parameter: URLs end up in access logs, and the conversation ID
+    # is the only key to a conversation.
+    thread_id: str | None = Header(default=None, alias="X-Thread-Id", max_length=64),
 ) -> TranscriptResponse:
     thread_id = thread_id or uuid.uuid4().hex
     content = await _read_capped(request)
@@ -71,7 +75,7 @@ async def upload_transcript(
         langfuse.start_as_current_observation(
             name="parse_transcript", as_type="tool", input={"bytes": len(content)}
         ) as span,
-        propagate_attributes(session_id=thread_id),
+        propagate_attributes(session_id=trace_session_id(thread_id)),
     ):
         try:
             record = await run_in_threadpool(parse_transcript, content)
