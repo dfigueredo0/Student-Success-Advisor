@@ -11,6 +11,8 @@ def merge(state: State) -> dict[str, Any]:
     if results:
         answer = "\n\n".join(r["answer"] for r in results)
         citations = [c for r in results for c in r["citations"]]
+    elif state.get("handoff"):  # orchestrator.escalation: hand off to a person
+        answer, citations = state["handoff"], []
     else:  # router did not pick an agent
         answer, citations = CLARIFY_QUESTION, []
     return {

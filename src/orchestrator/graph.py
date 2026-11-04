@@ -19,6 +19,7 @@ from langgraph.graph.state import CompiledStateGraph
 from agents.base import Agent
 from agents.career_advisor import CareerAdvisor
 from agents.college_advisor import CollegeAdvisor
+from orchestrator.escalation import escalate
 from orchestrator.followup import Filler, fill_slots
 from orchestrator.merge import merge
 from orchestrator.router import Classifier, ollama_classify, regex_route, route
@@ -36,6 +37,20 @@ def build_graph(
 
     def router_node(state: State) -> dict[str, Any]:
         text = state["messages"][-1]["content"]
+        # Hand-offs come first, even mid-scaffold: "I'm having suicidal thoughts" in reply to
+        # "Which courses have you completed?" must not be read as an answer.
+        if hit := escalate(text):
+            get_client().update_current_span(metadata={"escalation": hit.kind})
+            return {
+                "intent": None,
+                "route": None,
+                "confidence": 1.0,
+                "route_source": "escalation",
+                "prompt_version": None,
+                "slots": {},
+                "pending_field": None,
+                "handoff": hit.reply,
+            }
         if state.get("pending_field") and state.get("route") in by_name:
             # Mid-scaffold the message is usually the answer to the agent's question; only a
             # strong regex hit for a different intent means the student changed topic.
