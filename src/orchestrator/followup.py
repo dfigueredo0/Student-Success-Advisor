@@ -67,7 +67,8 @@ def fill_slots(
         "temperature": 0,
         "reasoning_effort": "none",  # as in ollama_classify: no hidden thinking on CPU
         "max_tokens": 128,
-        "metadata": {"prompt_version": FOLLOWUP_PROMPT.version},
+        # guard_text: the injection guardrail checks only the new message (see router.py).
+        "metadata": {"prompt_version": FOLLOWUP_PROMPT.version, "guard_text": text},
     }
     get_client().update_current_span(
         version=FOLLOWUP_PROMPT.version, metadata={"prompt_version": FOLLOWUP_PROMPT.version}

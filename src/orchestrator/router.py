@@ -197,7 +197,9 @@ def ollama_classify(
         # the answer is ~16 tokens. Eval 2026-10-14 (.claude/docs/WorkLog-2026-10-14.md).
         "reasoning_effort": "none",
         "max_tokens": 64,
-        "metadata": {"prompt_version": ROUTER_PROMPT.version},
+        # guard_text: the injection guardrail checks only the new message, not the history
+        # (earlier messages were checked when they were new).
+        "metadata": {"prompt_version": ROUTER_PROMPT.version, "guard_text": text},
     }
     try:
         out = json.loads(complete(payload))
