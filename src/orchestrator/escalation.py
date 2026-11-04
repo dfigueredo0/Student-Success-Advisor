@@ -20,9 +20,15 @@ _CODE = r"[A-Za-z]{2,4}\s?\d{3}\b"
 _RULES: list[tuple[str, re.Pattern[str], str]] = [
     (
         "crisis",
+        # Err toward a hand-off: people rarely say "suicide", so the reworded forms matter most.
         re.compile(
             r"\bsuicid\w*|\bkill(ing)? myself\b|\b(want|going) to (die|end (it|my life|everything))"
-            r"|\bself[- ]?harm|\bhurt(ing)? myself\b",
+            r"|\bself[- ]?harm|\bhurt(ing)? myself\b|\bcut(ting)? myself\b"
+            r"|\b(don'?t|do not) want to (be (here|around) any ?more|be alive|live|exist|wake up)\b"
+            r"|\b(think|thinking|thought) (about|of) ending\b|\bending (it all|things|my life)\b"
+            r"|\bend it all\b|\bbetter off (dead|without me)\b|\bno reason to live\b"
+            r"|\bwish i (was|were) dead\b|\bcan'?t go on\b|\btake my (own )?life\b"
+            r"|\b(not|isn'?t|is not) worth living\b",
             re.I,
         ),
         "I'm really sorry you're going through this, and I'm glad you reached out. Please call "
@@ -34,7 +40,9 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "distress",
         re.compile(
             r"\b(stressed|overwhelmed|anxious|anxiety|depressed|burn(ed|t) out)\b"
-            r"|\bfailing (a |my |\w+ )?(class|course)s?\b|\bwho can i talk to\b",
+            r"|\bfailing (a |my |\w+ )?(class|course)s?\b|\bwho can i talk to\b"
+            r"|\b(feel|feeling|so|completely) hopeless\b|\bmy mental health\b|\bcan'?t cope\b"
+            r"|\bpanic attacks?\b|\b(i'?m|i am) not (okay|ok)\b",
             re.I,
         ),
         "That sounds really hard, and you don't have to sort it out alone. Your academic "
@@ -121,6 +129,7 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
 
 def escalate(text: str) -> Escalation | None:
     """The hand-off for this message, or None to let the router handle it."""
+    text = text.replace("\u2019", "'")  # phones type a curly apostrophe (U+2019)
     for kind, pattern, reply in _RULES:
         if pattern.search(text):
             return Escalation(kind, reply)
