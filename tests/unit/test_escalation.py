@@ -7,8 +7,27 @@ HAND_OFFS = [
     ("I'm having suicidal thoughts", "crisis"),
     ("I can't do this anymore, I want to end it", "crisis"),
     ("I want to kill myself", "crisis"),
+    # Reworded: no "suicide" or "kill myself", the way people often say it.
+    ("I don't want to be here anymore", "crisis"),
+    ("I'm thinking about ending things", "crisis"),
+    ("Sometimes I think about ending it all", "crisis"),
+    ("I don't want to live anymore", "crisis"),
+    ("I dont want to be alive", "crisis"),
+    ("Everyone would be better off without me", "crisis"),
+    ("There's no reason to live", "crisis"),
+    ("I wish I was dead", "crisis"),
+    ("I can't go on like this", "crisis"),
+    ("I want to take my own life", "crisis"),
+    ("I've been cutting myself", "crisis"),
+    ("life isn't worth living", "crisis"),
     ("I'm failing a class and feel really stressed, who can I talk to?", "distress"),
     ("I'm so overwhelmed and anxious about school", "distress"),
+    ("I feel hopeless", "distress"),
+    ("my mental health is really bad right now", "distress"),
+    ("I can't cope with my classes", "distress"),
+    ("I keep having panic attacks before exams", "distress"),
+    ("I'm not okay", "distress"),
+    ("I don\u2019t want to be here anymore", "crisis"),  # curly apostrophe, as phones type it
     ("I'm on academic probation, what do I do?", "probation"),
     ("I got academically dismissed", "probation"),
     ("How do I appeal my grade?", "appeal"),
@@ -41,6 +60,14 @@ NORMAL = [
     "How many credits is CS 484?",
     "Which courses can I take instead of waiting for CS 430 to open?",
     "This class is killing me, what's a good next course?",
+    # Close to the crisis and distress wording, but ordinary questions.
+    "I don't want to be here at 8am, are there afternoon sections of CS 331?",
+    "When does the semester end?",
+    "I'm hopeless at math, which class is the easiest?",
+    "What's a good course on mental models for design?",
+    "Can I take CS 450 without CS 351?",
+    "Is CS 351 worth taking?",
+    "I'm okay with morning classes",
 ]
 
 
