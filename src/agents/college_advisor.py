@@ -283,7 +283,11 @@ def _render_recommendations(r: dict[str, Any]) -> str:
         )
         return "\n".join(lines)
 
-    lines.append(f"Based on what you've completed ({done}), here are {term} {subjects} options:")
+    now = ", ".join(r.get("in_progress_courses") or [])
+    taking = f" and what you're taking now ({now})" if now else ""
+    lines.append(
+        f"Based on what you've completed ({done}){taking}, here are {term} {subjects} options:"
+    )
     for i, c in enumerate(r["recommendations"], 1):
         why = []
         if c["builds_on"]:
@@ -376,6 +380,7 @@ class CollegeAdvisor(Agent):
                         remember=True,
                     ),
                     Field("term", "", _term, needed=_never),
+                    in_progress,
                 ),
                 tool=recommend,
                 render=_render_recommendations,
