@@ -10,7 +10,7 @@ class State(TypedDict, total=False):
     intent: str | None
     route: str | None  # agent name; None means the router asked for clarification
     confidence: float
-    route_source: str  # "regex" | "model" | "clarify"
+    route_source: str  # "regex" | "model" | "clarify" | "escalation"
     prompt_version: str | None  # classifier prompt used this turn; None when regex routed
     # Scaffold progress
     slots: dict[str, Any]
@@ -24,6 +24,7 @@ class State(TypedDict, total=False):
     # Per-turn outputs, reset by `turn_input`
     agent_results: list[dict[str, Any]]
     tool_calls: list[dict[str, Any]]
+    handoff: str | None  # orchestrator.escalation's reply, when the message is handed off
     answer: str
     citations: list[dict[str, Any]]
 
@@ -35,6 +36,7 @@ def turn_input(message: str) -> State:
         "prompt_version": None,
         "agent_results": [],
         "tool_calls": [],
+        "handoff": None,
         "answer": "",
         "citations": [],
     }
