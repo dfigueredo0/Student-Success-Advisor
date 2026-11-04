@@ -1,7 +1,8 @@
 """recommend_courses: next-term course suggestions from the schedule + completed courses.
 
 Candidates are courses with sections in the target term, in the student's subjects, not yet
-completed, whose prerequisites are met; research/independent-study courses are skipped.
+completed or in progress, whose prerequisites are met; research/independent-study courses are
+skipped.
 Ranking (advisor heuristic, not policy):
   1. builds on a course the student completed (the next step in a sequence),
   2. unlocks more later courses (foundational first),
@@ -40,7 +41,7 @@ _CANDIDATES = text(
                AS unlocks
     FROM catalog_course c
     JOIN catalog_section s ON s.course_code = c.code AND s.term_code = :term
-    WHERE c.subject = ANY(:subjects) AND :level = ANY(c.levels) AND NOT c.code = ANY(:completed)
+    WHERE c.subject = ANY(:subjects) AND :level = ANY(c.levels) AND NOT c.code = ANY(:taken)
     GROUP BY c.code
     """
 )
@@ -71,8 +72,11 @@ def recommend_courses(
     term: str | None = None,
     level: str = "Undergraduate",
     limit: int = 6,
+    in_progress_courses: list[str] | None = None,
 ) -> dict[str, Any]:
     completed = list(dict.fromkeys(completed_courses))
+    # Being taken this term (from an uploaded transcript): not a next course.
+    in_progress = [c for c in dict.fromkeys(in_progress_courses or []) if c not in completed]
     with engine().connect() as conn:
         terms = conn.execute(_TERMS).mappings().all()
         if not terms:
@@ -95,7 +99,7 @@ def recommend_courses(
                     "term": chosen["code"],
                     "subjects": subjects,
                     "level": level,
-                    "completed": completed,
+                    "taken": completed + in_progress,
                 },
             )
             .mappings()
@@ -147,6 +151,7 @@ def recommend_courses(
         "requested_term_available": term is None or chosen["name"].lower() == term.lower(),
         "subjects": subjects,
         "completed_courses": completed,
+        "in_progress_courses": in_progress,
         "considered": len(candidates),
         "recommendations": picks,
         "citations": [

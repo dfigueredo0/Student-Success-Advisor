@@ -201,7 +201,12 @@ def test_plan_asks_completed_once_and_remembers_it() -> None:
 
     second = chat.say("CS 115, CS 116")
     assert tools.recommend.calls == [
-        {"completed_courses": ["CS 115", "CS 116"], "subject": None, "term": "Spring Year 2"}
+        {
+            "completed_courses": ["CS 115", "CS 116"],
+            "subject": None,
+            "term": "Spring Year 2",
+            "in_progress_courses": None,
+        }
     ]
     assert "CS 331" in second["answer"] and "[1]" in second["answer"]
 
@@ -214,6 +219,20 @@ def test_plan_asks_completed_once_and_remembers_it() -> None:
             "in_progress_courses": None,
         }
     ]
+
+
+def test_plan_leaves_out_courses_in_progress() -> None:
+    """From an uploaded transcript: CS 350 is being taken now, so it is not a next course."""
+    tools = Tools()
+    tools.recommend.result = recommend_result() | {"in_progress_courses": ["CS 350"]}
+    chat = Chat(tools.advisor())
+    profile = {"completed_courses": ["CS 115", "CS 116"], "in_progress_courses": ["CS 350"]}
+    chat.graph.update_state(chat.config, {"profile": profile}, as_node="merge")
+
+    answer = chat.say("What should I take next semester?")["answer"]
+
+    assert tools.recommend.calls[-1]["in_progress_courses"] == ["CS 350"]
+    assert "taking now (CS 350)" in answer
 
 
 def test_unavailable_requested_term_is_called_out() -> None:
