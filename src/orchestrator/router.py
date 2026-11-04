@@ -107,6 +107,17 @@ _PATTERNS: list[tuple[re.Pattern[str], str, float, bool]] = [
         False,
     ),
     (
+        # Asking what the advisor has on them: "What's on my transcript?", "Show me my classes".
+        re.compile(
+            r"\bmy (transcript|record)\b|\bwhat (courses|classes) have i\b"
+            r"|\b(show|list|tell)( me)? (about )?my (courses|classes)\b",
+            re.I,
+        ),
+        "record_courses",
+        0.9,
+        True,
+    ),
+    (
         re.compile(
             r"^\s*(hi+|hello+|hey+|hiya|howdy|yo|help|good (morning|afternoon|evening))"
             r"(\s+there)?[\s!.?,)]*$|\bwhat can you do\b|\bwho are you\b",
