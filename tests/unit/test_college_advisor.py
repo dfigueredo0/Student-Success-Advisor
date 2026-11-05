@@ -27,6 +27,10 @@ MODEL = {
     "CS 331": "course_info",
     "Are there any courses on machine learning?": "find_courses",
     "Any courses on databases?": "find_courses",
+    "Can I take CS 450 next semester?": "check_eligibility",
+    "Check my graduation requirements": "degree_progress",
+    "Actually, check my graduation requirements": "degree_progress",
+    "CS 351 and MATH 151": "record_courses",  # the model's misreading of an answer
 }
 
 
@@ -177,7 +181,15 @@ def test_routing(message: str, intent: str) -> None:
     "message",
     [
         *MODEL,
-        "I took CS 331, what should I take next?",  # planning, not a record of courses
+        # One more word changes the intent, so only the whole message may match a pattern
+        # (each of these was a pattern misroute on 2026-11-05).
+        "I took CS 331, what should I take next?",
+        "I took CS 331 last semester. What should I take next.",
+        "Based on my transcript, what should I take next semester?",
+        "What classes have I got left to take for my degree?",
+        "Can I take CS 450 online?",
+        "What can you do with an applied math degree?",
+        "Help me pick my classes for next year",
         "CS 485?",  # after "Can I take CS 450?" this is a prerequisite check
         "and SQL?",
         "After graduation I want to work in security",
@@ -185,13 +197,6 @@ def test_routing(message: str, intent: str) -> None:
 )
 def test_only_near_certain_wordings_skip_the_model(message: str) -> None:
     assert regex_route(message) is None
-
-
-def test_short_and_follow_up_repeats_the_previous_request() -> None:
-    assert route("and CS 350?", model, previous="course_info").intent == "course_info"
-    assert route("and CS 350?", model).intent is None  # nothing to follow up on
-    # Longer than "and" plus three words: not sure enough, so the model decides.
-    assert route("and when can I graduate?", model, previous="career_advice").intent is None
 
 
 def test_plan_asks_completed_once_and_remembers_it() -> None:
@@ -317,6 +322,23 @@ def test_answer_to_pending_question_is_not_rerouted() -> None:
             "in_progress_courses": None,
         }
     ]
+
+
+def test_courses_listed_mid_question_answer_it_even_when_the_model_says_record() -> None:
+    tools = Tools()
+    chat = Chat(tools.advisor())
+    chat.say("Can I take CS 450?")
+    state = chat.say("CS 351 and MATH 151")  # MODEL reads it as record_courses
+    assert state["intent"] == "check_eligibility"
+    assert tools.check.calls[0]["completed_courses"] == ["CS 351", "MATH 151"]
+
+
+def test_unclear_reply_mid_question_is_the_answer() -> None:
+    assert route("none yet", model, previous="plan_next_term", answering=True).intent == (
+        "plan_next_term"
+    )
+    # Without an open question the same reply is unclear: ask.
+    assert route("none yet", model, previous="plan_next_term").intent is None
 
 
 def test_find_courses_extracts_topic() -> None:

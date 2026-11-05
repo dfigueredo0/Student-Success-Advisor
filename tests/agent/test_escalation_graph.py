@@ -39,7 +39,9 @@ def test_crisis_mid_question_is_handed_off_not_read_as_an_answer() -> None:
 def test_next_turn_after_a_hand_off_routes_normally() -> None:
     check = FakeTool("check_prerequisites", eligibility_result())
     graph = build_graph(
-        InMemorySaver(), agents=[CollegeAdvisor(check)], classify=FakeLLM().classify
+        InMemorySaver(),
+        agents=[CollegeAdvisor(check)],
+        classify=FakeLLM(FakeLLM.route("check_eligibility", 0.9)).classify,
     )
     config = {"configurable": {"thread_id": "t"}}
     graph.invoke(turn_input("How do I appeal my grade?"), config)
