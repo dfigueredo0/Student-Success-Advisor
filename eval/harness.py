@@ -3,6 +3,7 @@
     uv run python -m eval.harness --mode regex   # pattern stage only; hermetic
     uv run python -m eval.harness --mode model   # small model on every item (needs `make up`)
     uv run python -m eval.harness --mode full    # production path: hand-offs -> patterns -> model
+    uv run python -m eval.harness --mode full --model bakeoff-qwen3-8b   # bake-off a candidate
 
 Gold intents trace to the Researcher's survey areas (data/research_findings.json, F02/F06/
 F07/F08/F10); the wording is ours, not collected student messages. Out-of-scope items have
@@ -47,10 +48,14 @@ _MIN_INTERVAL_S = 1.1
 
 class Gateway:
     """gateway_complete, paced under the router key's rate limit. Remembers the last call's
-    error and duration: ollama_classify turns a gateway error into a clarify, which must not
-    be scored as the model's answer."""
+    error and duration: ollama_classify turns a gateway error or an unparseable reply into a
+    clarify, which must not be scored as the model's answer.
 
-    def __init__(self) -> None:
+    `overrides` replace request fields for a bake-off (model alias, max_tokens,
+    reasoning_effort) without touching the router's own request."""
+
+    def __init__(self, overrides: dict[str, Any] | None = None) -> None:
+        self.overrides = overrides or {}
         self.error: str | None = None
         self.ms: int | None = None
         self._last = 0.0
@@ -60,12 +65,17 @@ class Gateway:
             time.sleep(wait)
         self._last = start = time.monotonic()
         try:
-            return gateway_complete(payload)
+            reply = gateway_complete(payload | self.overrides)
         except Exception as exc:
             self.error = repr(exc)[:200]
             raise
         finally:
             self.ms = round((time.monotonic() - start) * 1000)
+        try:
+            json.loads(reply)
+        except (TypeError, ValueError):
+            self.error = f"unparseable: {str(reply)[:80]!r}"
+        return reply
 
 
 def predict(
@@ -104,10 +114,14 @@ def predict(
     return r.intent, r.source, r.confidence
 
 
-def run(mode: str) -> dict[str, Any]:
+def run(mode: str, overrides: dict[str, Any] | None = None) -> dict[str, Any]:
     threshold = get_settings().router_confidence_threshold
     rows = []
-    gateway = Gateway()
+    gateway = Gateway(overrides)
+    cold_ms = None
+    if mode != "regex":  # load the model first so the first item isn't timed with the load
+        ollama_classify("hi", [], gateway)
+        cold_ms, gateway.error = gateway.ms, None
     for item in load_gold():
         gateway.error = gateway.ms = None
         predicted, stage, confidence = predict(
@@ -135,9 +149,13 @@ def run(mode: str) -> dict[str, Any]:
         "date": date.today().isoformat(),
         "mode": mode,
         "prompt_version": None if mode == "regex" else ROUTER_PROMPT.version,
-        "model_alias": None if mode == "regex" else get_settings().llm_default_model,
+        "model_alias": None
+        if mode == "regex"
+        else (overrides or {}).get("model", get_settings().llm_default_model),
+        "overrides": overrides or {},
         "threshold": threshold,
         "metrics": score(rows),
+        "latency_ms": _latency(rows, cold_ms),
         "rows": rows,
     }
 
@@ -165,22 +183,45 @@ def _print(report: dict[str, Any]) -> None:
         print(
             f"  WARNING {len(errors)} gateway errors scored as clarify, e.g. {errors[0]['error']}"
         )
-    ms = sorted(r["ms"] for r in report["rows"] if r["ms"] is not None)
-    if ms:
-        slow = sum(m >= 30_000 for m in ms)  # gateway_complete's timeout -> clarify
+    if lat := report["latency_ms"]:
         print(
-            f"  model calls {len(ms)}: p50 {ms[len(ms) // 2]} ms, max {ms[-1]} ms, timeouts {slow}"
+            f"  model calls {lat['calls']}: p50 {lat['p50']} ms, p95 {lat['p95']} ms, "
+            f"max {lat['max']} ms, timeouts {lat['timeouts']}, cold load {lat['cold']} ms"
         )
+
+
+def _latency(rows: list[dict[str, Any]], cold_ms: int | None) -> dict[str, Any] | None:
+    ms = sorted(r["ms"] for r in rows if r["ms"] is not None)
+    if not ms:
+        return None
+    return {
+        "calls": len(ms),
+        "p50": ms[len(ms) // 2],
+        "p95": ms[min(len(ms) - 1, round(0.95 * (len(ms) - 1)))],
+        "max": ms[-1],
+        "timeouts": sum(m >= 30_000 for m in ms),  # gateway_complete's timeout -> clarify
+        "cold": cold_ms,
+    }
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--mode", choices=["regex", "model", "full"], default="full")
+    parser.add_argument("--model", help="gateway alias to route with (bake-off)")
+    parser.add_argument("--max-tokens", type=int, help="override the router's max_tokens")
+    parser.add_argument("--reasoning", help="override reasoning_effort, e.g. low")
     args = parser.parse_args(argv)
-    report = run(args.mode)
+    wanted = {
+        "model": args.model,
+        "max_tokens": args.max_tokens,
+        "reasoning_effort": args.reasoning,
+    }
+    overrides = {k: v for k, v in wanted.items() if v is not None}
+    report = run(args.mode, overrides)
     _print(report)
     RESULTS.mkdir(exist_ok=True)
-    out = RESULTS / f"routing-{report['date']}-{args.mode}.json"
+    tag = "".join(f"-{v}" for v in overrides.values())  # e.g. -bakeoff-qwen3-8b-512-low
+    out = RESULTS / f"routing-{report['date']}-{args.mode}{tag}.json"
     out.write_text(json.dumps(report, indent=2) + "\n")
     print(f"wrote {out.relative_to(ROOT)}")
     return 0

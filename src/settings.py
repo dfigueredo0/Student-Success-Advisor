@@ -30,7 +30,7 @@ class Settings(BaseSettings):
     llm_default_model: str = "local-llm"
 
     # Router: small model for stage 2, and the confidence below which it asks to clarify
-    ollama_model: str = "qwen3:1.7b"
+    ollama_model: str = "qwen3:14b"
     router_confidence_threshold: float = 0.6
 
     # Langfuse tracing

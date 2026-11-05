@@ -52,7 +52,7 @@ services:
     image: ollama/ollama:latest
     restart: unless-stopped
     environment:
-      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:1.7b}
+      OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:14b}
       EMBEDDING_MODEL: ${EMBEDDING_MODEL:-nomic-embed-text}
     # No published port: only the LiteLLM gateway reaches Ollama, over the compose network.
     # Serve, then pull the chat and embedding models; healthy only once both are local.

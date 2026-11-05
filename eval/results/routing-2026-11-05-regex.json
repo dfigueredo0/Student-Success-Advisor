@@ -5,14 +5,14 @@
   "model_alias": null,
   "threshold": 0.6,
   "metrics": {
-    "n": 96,
-    "accuracy": 0.271,
-    "misroute_rate": 0.042,
-    "clarify_rate_in_scope": 0.786,
+    "n": 105,
+    "accuracy": 0.286,
+    "misroute_rate": 0.038,
+    "clarify_rate_in_scope": 0.78,
     "out_of_scope_handled": 1.0,
     "outcomes": {
-      "clarified": 66,
-      "correct": 26,
+      "clarified": 71,
+      "correct": 30,
       "misrouted": 4
     },
     "per_intent": {
@@ -35,6 +35,11 @@
         "n": 13,
         "precision": 1.0,
         "recall": 0.077
+      },
+      "drop_course": {
+        "n": 7,
+        "precision": 1.0,
+        "recall": 0.286
       },
       "find_courses": {
         "n": 8,
@@ -59,12 +64,12 @@
     },
     "stages": {
       "clarify": {
-        "n": 87,
-        "correct": 17
+        "n": 95,
+        "correct": 20
       },
       "regex": {
-        "n": 9,
-        "correct": 9
+        "n": 10,
+        "correct": 10
       }
     },
     "confusions": {
@@ -74,6 +79,7 @@
       "degree_progress -> None": 11,
       "course_info -> None": 9,
       "find_courses -> None": 7,
+      "drop_course -> None": 5,
       "record_courses -> None": 2,
       "help -> None": 1,
       "degree_progress -> plan_next_term": 1,
@@ -1038,6 +1044,96 @@
       "text": "forget that, what jobs can I get with a data science degree?",
       "gold": "career_advice",
       "predicted": "plan_next_term",
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R97",
+      "text": "What happens if I drop CS 351?",
+      "gold": "drop_course",
+      "predicted": "drop_course",
+      "stage": "regex",
+      "confidence": 1.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R98",
+      "text": "Should I withdraw from CS 430 or just stick it out?",
+      "gold": "drop_course",
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R99",
+      "text": "thinking about dropping MATH 251, is that a bad idea?",
+      "gold": "drop_course",
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R100",
+      "text": "If I drop CS 331 now, what does that do to next semester?",
+      "gold": "drop_course",
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R101",
+      "text": "Would dropping PHYS 123 push back any of my other classes?",
+      "gold": "drop_course",
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R102",
+      "text": "I'm considering withdrawing from CS 350, what would I lose?",
+      "gold": "drop_course",
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R103",
+      "text": "I want to withdraw from all my classes this semester",
+      "gold": null,
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R104",
+      "text": "If I drop CS 351 will I lose my financial aid?",
+      "gold": null,
+      "predicted": null,
+      "stage": "clarify",
+      "confidence": 0.0,
+      "ms": null,
+      "error": null
+    },
+    {
+      "id": "R105",
+      "text": "CS 350 and CS 351",
+      "gold": "drop_course",
+      "predicted": "drop_course",
       "stage": "clarify",
       "confidence": 0.0,
       "ms": null,
