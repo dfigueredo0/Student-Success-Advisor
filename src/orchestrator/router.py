@@ -24,6 +24,7 @@ INTENTS: dict[str, str] = {
     "find_courses": "college_advisor",
     "degree_progress": "college_advisor",
     "record_courses": "college_advisor",
+    "drop_course": "college_advisor",
     "help": "college_advisor",
     "career_advice": "career_advisor",
 }
@@ -42,6 +43,7 @@ INTENT_DESCRIPTIONS: dict[str, str] = {
     "whether a course counts toward it, or credits remaining",
     "record_courses": "tells you unprompted which courses they have completed, or asks what "
     "you have on record",
+    "drop_course": "asks what happens if they drop or withdraw from a course they are taking",
     "help": "greets you or asks what you can do",
     "career_advice": "asks about careers, jobs or internships, or which skills to build for one",
 }
@@ -53,6 +55,7 @@ _FEW_SHOT: list[tuple[str, str]] = [
     ("Are there any classes on machine learning?", "find_courses"),
     ("Am I on track to graduate?", "degree_progress"),
     ("I already passed MATH 151 and CS 115", "record_courses"),
+    ("Should I drop CS 430 this semester?", "drop_course"),
     ("hey, what can you do?", "help"),
     ("What skills do I need to become a data scientist?", "career_advice"),
     ("and for SQL?", "follow_up"),
@@ -96,6 +99,11 @@ _SURE: list[tuple[re.Pattern[str], str, bool]] = [
     ),
     (re.compile(rf"^\s*am i on track to graduate{_END}", re.I), "degree_progress", True),
     (
+        re.compile(rf"^\s*what happens if i (drop|withdraw from) {_CODE}{_END}", re.I),
+        "drop_course",
+        True,
+    ),
+    (
         re.compile(
             r"^\s*(what['\u2019]?s on my transcript|what (courses|classes) have i (taken|completed)"
             rf"( so far)?|show me my (courses|classes)){_END}",
@@ -130,6 +138,7 @@ CLARIFY_QUESTION = (
     '- check prerequisites ("Can I take CS 450?")\n'
     '- look up a course ("Tell me about CS 331")\n'
     '- find courses on a topic ("Any courses on machine learning?")\n'
+    '- show what dropping a course would affect ("What happens if I drop CS 351?")\n'
     '- match courses to career skills ("What skills do I need to become a data scientist?")\n'
     "What would you like to do?"
 )

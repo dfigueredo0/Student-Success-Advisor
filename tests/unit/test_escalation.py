@@ -32,7 +32,8 @@ HAND_OFFS = [
     ("I got academically dismissed", "probation"),
     ("How do I appeal my grade?", "appeal"),
     ("I was accused of cheating on an exam", "appeal"),
-    ("Should I withdraw from CS 351?", "withdrawal"),
+    ("Should I withdraw?", "withdrawal"),
+    ("I want to withdraw from all my classes", "withdrawal"),
     ("Can I drop out of the semester?", "withdrawal"),
     ("I want to switch my major to data science.", "major_change"),
     ("How do I change my major?", "major_change"),
@@ -44,6 +45,9 @@ HAND_OFFS = [
     ("Will my AP credit transfer?", "transfer_credit"),
     ("Do I qualify for more financial aid?", "financial"),
     ("If I drop to 9 credits will I lose my F-1 status?", "financial"),
+    # Naming a course sends a drop to the consequence check, but aid and visa words still
+    # hand off first.
+    ("If I withdraw from CS 351 will I lose my financial aid?", "financial"),
     ("How do I pay my tuition bill?", "financial"),
 ]
 
@@ -68,6 +72,9 @@ NORMAL = [
     "Can I take CS 450 without CS 351?",
     "Is CS 351 worth taking?",
     "I'm okay with morning classes",
+    # Dropping one course: the consequence check answers, then points to an advisor.
+    "Should I withdraw from CS 351?",
+    "What happens if I drop CS 351?",
 ]
 
 

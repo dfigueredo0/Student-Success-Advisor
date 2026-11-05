@@ -86,8 +86,12 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
     ),
     (
         "withdrawal",
+        # Leaving the university or every class. Dropping one named course ("Should I withdraw
+        # from CS 351?") goes to the router's consequence check instead, which ends with the
+        # same advice to see an advisor (UC-09).
         re.compile(
-            r"\bwithdraw\w*|\bdrop out\b|\bleave of absence\b|\btake (a|the) (semester|term) off\b",
+            rf"(?s)^(?!.*{_CODE}).*?(\bwithdraw\w*|\bdrop out\b|\bleave of absence\b"
+            r"|\btake (a|the) (semester|term) off\b)",
             re.I,
         ),
         "Withdrawing can affect your financial aid, a student visa, and how long your degree "

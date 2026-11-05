@@ -1,9 +1,12 @@
+import json
 import time
+from datetime import UTC, datetime
 from typing import Any
 
 import httpx
 from fastapi.testclient import TestClient
 from langfuse import get_client
+from sqlalchemy import Engine, text
 
 from api.main import app
 from api.tracing import trace_session_id
@@ -62,3 +65,31 @@ def test_conversation_resumes_from_postgres_after_restart() -> None:
     }
     assert [m["role"] for m in kept["messages"]] == ["user", "assistant"] * 2
     assert second["pending_field"] is None
+
+
+def test_drop_question_checks_the_real_catalog_and_logs_one_verifier_run(engine: Engine) -> None:
+    """UC-09 on the loaded catalog: CS 450 lists CS 351 as a prerequisite."""
+    with TestClient(app) as api:
+        thread = api.post("/chat", json={"message": "hi"}).json()["thread_id"]
+        profile = {"in_progress_courses": ["CS 350", "CS 351"], "completed_courses": ["CS 331"]}
+        api.app.state.graph.update_state(
+            {"configurable": {"thread_id": thread}}, {"profile": profile}, as_node="merge"
+        )
+        start = datetime.now(UTC)
+        body = api.post(
+            "/chat", json={"message": "What happens if I drop CS 351?", "thread_id": thread}
+        ).json()
+        args = stored(api, thread)["tool_calls"][0]["args"]
+
+    assert "CS 450 - Operating Systems" in body["answer"] and body["citations"]
+    with engine.connect() as conn:
+        runs = conn.execute(
+            text(
+                "SELECT verifier, passed, failure_reasons FROM verifier_run "
+                "WHERE input_state = CAST(:args AS jsonb) AND created_at >= :start"
+            ),
+            {"args": json.dumps(args), "start": start},
+        ).all()
+    [(verifier, passed, reasons)] = runs  # exactly one row for the one check
+    assert verifier == "check_consequences" and passed is False
+    assert "prereq_blocked:CS 450" in reasons

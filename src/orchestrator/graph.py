@@ -8,7 +8,7 @@ Agents never link to each other; every hop goes router -> agent -> merge, and
 `tests/unit/test_graph_structure.py` enforces that on the compiled graph.
 """
 
-from collections.abc import Iterable
+from collections.abc import Callable, Iterable
 from typing import Any
 
 from langfuse import get_client, observe
@@ -24,6 +24,9 @@ from orchestrator.followup import Filler, fill_slots
 from orchestrator.merge import merge
 from orchestrator.router import Classifier, ollama_classify, route
 from orchestrator.state import State
+from schemas.logs import VerifierRun
+from settings import get_settings
+from tools.verifier_log import log_verifier_run, verifier_run
 
 
 def build_graph(
@@ -32,6 +35,7 @@ def build_graph(
     agents: Iterable[Agent] | None = None,
     classify: Classifier = ollama_classify,
     fill: Filler = fill_slots,
+    log_run: Callable[[VerifierRun], None] = log_verifier_run,
 ) -> CompiledStateGraph:
     by_name = {a.name: a for a in (agents or [CollegeAdvisor(), CareerAdvisor()])}
 
@@ -88,6 +92,11 @@ def build_graph(
                 # against, and an answer to the agent's question leaves the next field to ask.
                 (lambda fields: fill(fields, text, earlier)) if earlier and not pending else None,
             )
+            # Logging contract (CLAUDE.md rule 11): one VerifierRun per verifier call.
+            model = get_settings().llm_default_model
+            for call in result["tool_calls"]:
+                if run := verifier_run(call, state["intent"], model, state.get("prompt_version")):
+                    log_run(run)
             return {
                 "agent_results": [result],
                 "slots": result["slots"],
