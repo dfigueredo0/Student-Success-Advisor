@@ -27,6 +27,19 @@ make api       # chat API + web UI on http://localhost:8000
 service's healthcheck. **The first run takes several minutes** while Ollama downloads the
 chat and embedding models (it waits up to 15 minutes). Later runs start in under a minute.
 
+Ollama runs on your GPU when Docker can reach one. `make up` prints what it picked, e.g.
+`ollama: amd (AMD GPU (ROCm /dev/kfd))`, and adds `infra/docker-compose.amd.yml` or
+`infra/docker-compose.nvidia.yml` to match:
+
+- **NVIDIA**: works with Docker Desktop (Windows/WSL). On native Linux, install
+  [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
+  first, otherwise you get CPU.
+- **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses the `ollama/ollama:rocm` image.
+- **macOS**: always CPU (Docker can't give containers the GPU on a Mac).
+
+To choose yourself, run `make up GPU=cpu` (or `amd`, `nvidia`). To check what Ollama is
+using, run `docker compose -f infra/docker-compose.yml logs ollama | grep "inference compute"`.
+
 `.env` is only created once. When `.env.example` gains new lines after a pull, add them to
 your `.env` by hand, or delete `.env` and run `make up` again if you never edited it.
 

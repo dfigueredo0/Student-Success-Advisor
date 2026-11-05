@@ -1,7 +1,9 @@
 # Clean checkout -> green:  make install && make up && make test
 
-COMPOSE_FILES ?= -f infra/docker-compose.yml
-COMPOSE       := docker compose $(COMPOSE_FILES) --env-file .env
+# Ollama runs on this machine's GPU by default (infra/gpu.py). Force one with GPU=cpu|amd|nvidia.
+# CI sets COMPOSE_FILES itself, so it never runs the detection and stays on CPU.
+COMPOSE_FILES ?= -f infra/docker-compose.yml $(shell uv run --no-project python infra/gpu.py $(GPU))
+COMPOSE        = docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-agent test-integration \
