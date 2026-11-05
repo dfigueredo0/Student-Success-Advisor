@@ -45,3 +45,11 @@ def test_older_answer_comes_back_when_the_message_names_it() -> None:
 def test_stop_words_alone_do_not_bring_back_old_messages() -> None:
     history = [user("what is the course for me"), *[user(f"hello {i}") for i in range(RECENT)]]
     assert "(earlier)" not in context(history, "what is the course?")
+
+
+def test_grades_and_major_stay_out_of_the_models_prompt() -> None:
+    summary = "Here's what I have:\n- Completed: CS 115 (A), CS 331 (C+)\n- Major: Computer Science"
+    history = [{"role": "assistant", "content": summary}]
+    shown = context(history, "What should I take next?")
+    assert "CS 331" in shown  # the model may still need the course
+    assert "(C+)" not in shown and "Computer Science" not in shown

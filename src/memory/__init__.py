@@ -9,6 +9,8 @@ sending the whole thread to a small model.
 
 import re
 
+from domain.student_text import hide_record
+
 RECENT = 4  # messages: the last two exchanges
 EARLIER = 2  # older messages brought back by in-chat search
 MAX_CHARS = 600  # per message; a course list with its citations runs ~1-2k
@@ -31,7 +33,8 @@ def words(text: str) -> set[str]:
 
 
 def _line(message: dict[str, str]) -> str:
-    text = EXAMPLES.sub("", _CITATION_LINE.sub("", message["content"])).strip()
+    # Prompts are logged by the gateway, and routing a message never needs a student's grades.
+    text = hide_record(EXAMPLES.sub("", _CITATION_LINE.sub("", message["content"]))).strip()
     if len(text) > MAX_CHARS:
         text = text[:MAX_CHARS].rsplit(" ", 1)[0] + "..."
     return f"{'Student' if message['role'] == 'user' else 'Advisor'}: {text}"
