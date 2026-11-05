@@ -1,28 +1,16 @@
 """Output guardrail for the LiteLLM gateway.
-Runs after every model call (post_call) and replaces student identifiers in the
-answer with "[removed]" before it reaches the app. It also refuses streamed
-requests (pre_call), because streamed answers are sent piece by piece and would
-skip the check.
-"""
+Runs after every model call (post_call) and replaces personal data in the answer, the
+model's thinking text and any tool-call arguments with "[removed]" before it reaches the app.
+It also refuses streamed requests (pre_call), because streamed answers are sent piece by
+piece and would skip the check.
 
-import re
+What counts as personal data lives in src/domain/redaction.py, which the app's merge node
+uses too; docker-compose.yml mounts it into the container and puts it on PYTHONPATH.
+"""
 
 from fastapi import HTTPException
 from litellm.integrations.custom_guardrail import CustomGuardrail
-
-REDACTED = "[removed]"
-
-# Assumed formats; confirm against real IIT records.
-SENSITIVE_PATTERNS = [
-    re.compile(r"\bA\d{8}\b", re.IGNORECASE),  # IIT student ID, e.g. A20123456
-    re.compile(r"\b[\w.+-]+@hawk\.(iit|illinoistech)\.edu\b", re.IGNORECASE),  # student email
-]
-
-
-def redact(text: str) -> str:
-    for pattern in SENSITIVE_PATTERNS:
-        text = pattern.sub(REDACTED, text)
-    return text
+from redaction import redact
 
 
 class OutputGuard(CustomGuardrail):
@@ -44,4 +32,10 @@ class OutputGuard(CustomGuardrail):
                 value = getattr(message, field, None)
                 if isinstance(value, str):
                     setattr(message, field, redact(value))
+            # A tool call's arguments are model-written text too, and the app acts on them.
+            for call in getattr(message, "tool_calls", None) or []:
+                function = getattr(call, "function", None)
+                arguments = getattr(function, "arguments", None)
+                if isinstance(arguments, str):
+                    function.arguments = redact(arguments)
         return response

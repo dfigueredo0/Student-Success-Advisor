@@ -25,5 +25,6 @@ def langfuse(settings: Settings) -> Iterator[httpx.Client]:
 def litellm(settings: Settings) -> Iterator[httpx.Client]:
     key = settings.litellm_master_key.get_secret_value()
     headers = {"Authorization": f"Bearer {key}"}
-    with httpx.Client(base_url=settings.litellm_base_url, headers=headers, timeout=60) as c:
+    # 180 s: qwen3 on a laptop CPU takes up to 160 s to think through a "repeat this" prompt.
+    with httpx.Client(base_url=settings.litellm_base_url, headers=headers, timeout=180) as c:
         yield c
