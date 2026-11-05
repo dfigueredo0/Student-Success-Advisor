@@ -1,0 +1,13 @@
+# NVIDIA GPU override for Ollama. `make up` adds it when infra/gpu.py finds nvidia-smi and
+# a container runtime for it (Docker Desktop, or nvidia-container-toolkit on Linux).
+# The base image (ollama/ollama) already includes CUDA.
+
+services:
+  ollama:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]

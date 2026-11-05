@@ -1,0 +1,10 @@
+# AMD GPU override for Ollama (ROCm). `make up` adds it when infra/gpu.py finds /dev/kfd.
+# Ollama runs as root in the container, so no group_add is needed for the device nodes.
+# Unsupported iGPUs are skipped automatically ("dropping ROCm device" in the logs).
+
+services:
+  ollama:
+    image: ollama/ollama:rocm
+    devices:
+      - /dev/kfd
+      - /dev/dri
