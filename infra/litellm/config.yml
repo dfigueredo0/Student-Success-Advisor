@@ -3,9 +3,10 @@
 # The app asks for a model by its alias (model_name); LiteLLM decides which
 # real model answers. Swapping models later only means editing this list.
 model_list:
+  # Router and slot filling. qwen3:14b won the router bake-off (docs/adr/0001-router-model.md).
   - model_name: local-llm
     litellm_params:
-      model: ollama_chat/qwen3:1.7b
+      model: ollama_chat/qwen3:14b
       # Inside Docker, containers reach each other by service name, not localhost.
       api_base: http://ollama:11434
 
