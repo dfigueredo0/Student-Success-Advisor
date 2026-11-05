@@ -73,6 +73,7 @@ services:
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ssa-dev-master-key}
       LITELLM_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/litellm
+      PYTHONPATH: /app/shared
       LANGFUSE_HOST: http://langfuse-web:3000
       LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
       LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
@@ -80,6 +81,9 @@ services:
       - "127.0.0.1:4000:4000"
     volumes:
       - ./litellm:/app/gateway:ro
+      # The output guardrail's patterns, shared with the app's merge node. Not inside
+      # /app/gateway: nothing can be mounted into a read-only folder.
+      - ../src/domain/redaction.py:/app/shared/redaction.py:ro
     depends_on:
       postgres:
         condition: service_healthy

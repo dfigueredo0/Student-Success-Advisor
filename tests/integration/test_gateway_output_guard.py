@@ -1,10 +1,15 @@
-"""The output guardrail removes student identifiers from answers and refuses streaming."""
+"""The output guardrail removes personal data from answers and refuses streaming.
+
+The patterns themselves are tested in tests/unit/test_redaction.py; these prove the gateway
+loads them (src/domain/redaction.py is mounted into the container) and applies them.
+"""
 
 import httpx
 import pytest
 
 STUDENT_ID = "A20123456"
 STUDENT_EMAIL = "jdoe@hawk.illinoistech.edu"
+STUDENT_PHONE = "773-555-0142"
 STAFF_EMAIL = "advising@iit.edu"
 
 
@@ -22,7 +27,7 @@ def repeat(litellm: httpx.Client, text: str) -> dict[str, str]:
     return resp.json()["choices"][0]["message"]
 
 
-@pytest.mark.parametrize("secret", [STUDENT_ID, STUDENT_EMAIL])
+@pytest.mark.parametrize("secret", [STUDENT_ID, STUDENT_EMAIL, STUDENT_PHONE])
 def test_student_identifiers_are_removed(litellm: httpx.Client, secret: str) -> None:
     message = repeat(litellm, f"The record belongs to {secret}.")
     shown = (message.get("content") or "") + (message.get("reasoning_content") or "")
