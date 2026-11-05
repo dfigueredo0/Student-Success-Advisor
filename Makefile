@@ -66,7 +66,7 @@ api-debug:  ## Chat API that prints every router/agent/merge step to the termina
 	uv run uvicorn api.main:app --reload --port 8000
 
 harness:  ## Streamlit debug page for the chat API
-	uv run --group harness streamlit run frontend/harness/app.py
+	uv run --group harness streamlit run frontend/harness/app.py --server.address 127.0.0.1 --server.headless true
 
 ingest-catalog:  ## Scrape the IIT Banner catalog + schedule and load it into pgvector (weekly cron)
 	uv run --group ingest python pipelines/ingest/illinoistech_banner_scraper.py
