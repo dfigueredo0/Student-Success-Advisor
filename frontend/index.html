@@ -8,11 +8,11 @@
 </head>
 <body>
 
-    <!-- STEP 1: MANDATORY TRANSCRIPT UPLOAD ONBOARDING -->
+    <!-- STEP 1: TRANSCRIPT UPLOAD ONBOARDING -->
     <div id="upload-screen">
         <div class="upload-card">
             <h1>Student Course Advisor - Transcript Upload</h1>
-            <p style="font-size: 12px; color: #555;">Please upload your unofficial transcript as a PDF to process your course trajectory flowchart.</p>
+            <p style="font-size: 12px; color: var(--text-secondary);">Please upload your unofficial transcript as a PDF to process your course trajectory flowchart.</p>
             
             <div class="file-box">
                 <strong style="display:block; font-size:13px;">Select Transcript File</strong>
@@ -25,7 +25,7 @@
             <p id="upload-status" role="status" style="font-size: 12px; color: #b00020; margin-top: 8px; min-height: 16px;"></p>
 
             <div class="preset-section">
-                <p style="font-size: 11px; font-weight: bold; color: #666; margin-bottom: 6px;">OR TEST WITH A SAMPLE STUDENT PROFILE:</p>
+                <p style="font-size: 11px; font-weight: bold; color: var(--text-muted); margin-bottom: 6px;">OR TEST WITH A SAMPLE STUDENT PROFILE:</p>
                 <div class="preset-grid">
                     <div class="preset-card" onclick="loadSampleStudent('senior')">
                         <strong>Alex Johnson (Senior)</strong>
@@ -54,9 +54,14 @@
                 <span>Credits: <strong id="info-credits">92 / 126</strong></span>
             </div>
 
-            <button class="btn-secondary" onclick="resetToUpload()">
-                Change / Re-upload Transcript
-            </button>
+            <div style="display: flex; gap: 8px;">
+                <button class="btn-secondary" id="theme-toggle-btn" onclick="toggleDarkMode()">
+                    🌙 Dark Mode
+                </button>
+                <button class="btn-secondary" onclick="resetToUpload()">
+                    Change / Re-upload Transcript
+                </button>
+            </div>
         </header>
 
         <!-- Workspace Layout (Sidebar | Center View | Chat Panel) -->
@@ -114,11 +119,11 @@
                     <!-- RESIZE DRAG HANDLE -->
                     <div id="calendar-drag-handle" class="resize-handle" title="Drag up or down to resize calendar"></div>
 
-                    <!-- CALENDAR SECTION AT BOTTOM OF TRAJECTORY MAP -->
+                    <!-- CALENDAR SECTION -->
                     <div id="calendar-section" class="calendar-section">
                         <div class="calendar-header">
                             <strong>Weekly Class Schedule View</strong>
-                            <span style="font-size: 11px; color: #666;">(Active Term Enrolled / Planned Courses)</span>
+                            <span style="font-size: 11px; color: var(--text-muted);">(Active Term Enrolled / Planned Courses)</span>
                         </div>
                         <div class="calendar-grid-container">
                             <table class="calendar-table">
@@ -133,7 +138,7 @@
                                     </tr>
                                 </thead>
                                 <tbody id="calendar-body">
-                                    <!-- Dynamic Schedule Rows Loaded via JavaScript -->
+                                    <!-- Dynamic Schedule Rows -->
                                 </tbody>
                             </table>
                         </div>
@@ -143,7 +148,7 @@
                 <!-- VIEW 2: DEGREE AUDIT -->
                 <div id="view-audit" class="view-panel generic-view-content hidden">
                     <h2>Degree Requirement Audit</h2>
-                    <p style="margin-bottom: 15px; color: #555;">Estimated from your transcript by subject code; not an official degree audit.</p>
+                    <p style="margin-bottom: 15px; color: var(--text-secondary);">Estimated from your transcript by subject code; not an official degree audit.</p>
                     
                     <table class="audit-table">
                         <thead>
@@ -165,7 +170,7 @@
                     <div class="table-actions-bar">
                         <div>
                             <h2>Parsed Transcript & Course Records</h2>
-                            <p style="color: #555; font-size: 12px;">Modify course details and meeting schedules below. Updates automatically sync to your Trajectory Map & Calendar.</p>
+                            <p style="color: var(--text-secondary); font-size: 12px;">Modify course details and meeting schedules below. Updates automatically sync to your Trajectory Map & Calendar.</p>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn" onclick="addNewTranscriptRow()">+ Add Course</button>
@@ -232,7 +237,7 @@
             <p><strong>Credits:</strong> <span id="modal-credits">3</span></p>
             <p><strong>Status:</strong> <span id="modal-status">Completed</span></p>
             <p><strong>Prerequisites:</strong> <span id="modal-prereqs">CS 116</span></p>
-            <p style="margin-top: 10px; padding-top: 8px; border-top: 1px solid #eee;">
+            <p style="margin-top: 10px; padding-top: 8px; border-top: 1px solid var(--border-light);">
                 <strong>Description:</strong> <span id="modal-desc">Core data structures, trees, graphs, sorting, and time complexity.</span>
             </p>
             <div style="text-align: right; margin-top: 15px;">

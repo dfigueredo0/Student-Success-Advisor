@@ -652,3 +652,28 @@ function initCalendarResize() {
         document.removeEventListener('mouseup', stopDrag);
     }
 }
+
+/* Add to Section 10 or at the end of app.js */
+
+function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+    const isDark = document.body.classList.contains('dark-mode');
+    localStorage.setItem('theme', isDark ? 'dark' : 'light');
+    updateThemeButtonText(isDark);
+}
+
+function updateThemeButtonText(isDark) {
+    const btn = document.getElementById('theme-toggle-btn');
+    if (btn) {
+        btn.innerText = isDark ? '☀️ Light Mode' : '🌙 Dark Mode';
+    }
+}
+
+// Restore saved theme on initial script load
+document.addEventListener('DOMContentLoaded', () => {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'dark') {
+        document.body.classList.add('dark-mode');
+        updateThemeButtonText(true);
+    }
+});
