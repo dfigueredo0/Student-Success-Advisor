@@ -171,6 +171,8 @@ class Chat:
         ("hey there!", "help"),
         ("good morning", "help"),
         ("What can you do?", "help"),
+        ("What happens if I drop CS 351?", "drop_course"),
+        ("what happens if i withdraw from cs351", "drop_course"),
     ],
 )
 def test_routing(message: str, intent: str) -> None:
@@ -190,6 +192,7 @@ def test_routing(message: str, intent: str) -> None:
         "Can I take CS 450 online?",
         "What can you do with an applied math degree?",
         "Help me pick my classes for next year",
+        "What happens if I drop CS 351 and take CS 350 instead?",
         "CS 485?",  # after "Can I take CS 450?" this is a prerequisite check
         "and SQL?",
         "After graduation I want to work in security",

@@ -1,0 +1,53 @@
+{
+  "note": "Credit-load thresholds for the UC-09 consequence check (src/domain/consequences.py). Researched 2026-11-05 from the pages below; every rule stays verified=false until a teammate opens the URL and confirms the quote and number. None of the pages gives an effective date, so effective_from is the date they were checked. Never edit a rule in place: add a new one with a later effective_from. Undergraduate only for now (the transcript parser reads UG rows); graduate full-time is 9 hours on the Registrar page.",
+  "rules": [
+    {
+      "id": "full_time-ug",
+      "kind": "full_time",
+      "level": "undergraduate",
+      "min_credits": 12,
+      "message": "You'd drop below full-time (12 credit hours). That changes your tuition rate and can reduce your aid; check with the Registrar and the Office of Financial Aid first.",
+      "source": "Illinois Tech Registrar, Full-time Status",
+      "url": "https://www.iit.edu/registrar/registration/full-time-status",
+      "quote": "Twelve (12) hours",
+      "effective_from": "2026-11-05",
+      "verified": false
+    },
+    {
+      "id": "scholarship-ug",
+      "kind": "scholarship",
+      "level": "undergraduate",
+      "min_credits": 12,
+      "message": "Institutional scholarships are prorated below full-time, and an outside scholarship that requires full-time may have to be returned; ask the Office of Financial Aid.",
+      "source": "Illinois Tech Office of Financial Aid, Undergraduate Enrollment Policy",
+      "url": "https://www.iit.edu/financial-aid/policies-and-procedures/undergraduate-enrollment-policy",
+      "quote": "Students enrolled less than full-time will be charged a reduced tuition rate, which affects institutional scholarships.",
+      "effective_from": "2026-11-05",
+      "verified": false
+    },
+    {
+      "id": "f1_full_course-ug",
+      "kind": "f1_full_course",
+      "level": "undergraduate",
+      "min_credits": 12,
+      "message": "If you're on an F-1 visa, going below 12 credit hours needs approval from the Office of Global Services and your academic adviser before you drop, or it may put your status at risk.",
+      "source": "8 CFR 214.2(f)(6)(i)(B); Illinois Tech Office of Global Services, Reduced Course Load",
+      "url": "https://www.ecfr.gov/current/title-8/section-214.2#p-214.2(f)(6)(i)(B)",
+      "quote": "at least 12 semester or quarter hours of instruction per academic term",
+      "effective_from": "2026-11-05",
+      "verified": false
+    },
+    {
+      "id": "aid_half_time-ug",
+      "kind": "aid_enrollment",
+      "level": "undergraduate",
+      "min_credits": 6,
+      "message": "Below half-time (6 credit hours) you can't receive Federal Direct Loans.",
+      "source": "Illinois Tech Office of Financial Aid, Undergraduate Enrollment Policy",
+      "url": "https://www.iit.edu/financial-aid/policies-and-procedures/undergraduate-enrollment-policy",
+      "quote": "Students must remain enrolled at least half-time to receive Federal Direct Loans.",
+      "effective_from": "2026-11-05",
+      "verified": false
+    }
+  ]
+}

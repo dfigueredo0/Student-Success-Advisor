@@ -11,6 +11,7 @@ from typing import Any
 
 from agents.base import Agent, AgentResult, Field, Resolve, Scaffold
 from tools.advisor.catalog import get_course_info, search_courses
+from tools.advisor.check_consequences import check_consequences
 from tools.advisor.check_prerequisites import check_prerequisites
 from tools.advisor.get_degree_progress import get_degree_progress
 from tools.advisor.recommend_courses import recommend_courses
@@ -56,6 +57,7 @@ HELP = (
     '- check whether you meet a course\'s prerequisites ("Can I take CS 450?")\n'
     '- look up a course\'s description, sections and instructors ("Tell me about CS 331")\n'
     '- find courses on a topic ("Any courses on machine learning?")\n'
+    '- show what dropping a course would affect ("What happens if I drop CS 351?")\n'
     '- match courses to career skills ("What skills do I need to become a data scientist?")\n\n'
     "Tell me what you've completed (e.g. \"I've taken CS 115 and MATH 151\") and I'll "
     "remember it for this conversation."
@@ -81,6 +83,15 @@ GREETINGS_AGAIN = (
 ASK_COMPLETED_FOR_PLAN = (
     "To suggest courses I need to know what you've already completed. List course codes "
     "(e.g. CS 115, MATH 151), or say 'none' if you're just starting."
+)
+
+ASK_CURRENT = "Which courses are you taking this term? List their codes (e.g. CS 351, MATH 251)."
+
+# Every consequence answer ends here: dropping a course is a decision to make with a person
+# (data/advisor_interview_findings.json lists course_withdrawal as an escalation trigger).
+ASK_BEFORE_DROPPING = (
+    "Before you drop, talk to your academic advisor. If you get financial aid or are on a "
+    "student visa, check with the Office of Financial Aid or the Office of Global Services too."
 )
 
 DEGREE_PROGRESS_UNAVAILABLE = (
@@ -309,6 +320,63 @@ def _render_recommendations(r: dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
+def _render_consequences(r: dict[str, Any]) -> str:
+    course = r["course"]
+    if not r["taking"]:
+        now = ", ".join(r["current"]) or "none"
+        return (
+            f"{course} isn't one of the courses you're taking this term ({now}), so I can't "
+            "check what dropping it would do. Which course did you mean?"
+        )
+    lines = [f"If you drop {course} this term:"]
+    if r["credits_before"] is None:
+        lines.append(
+            f"- I can't total your credit hours (no fixed credits for "
+            f"{', '.join(r['unknown_credits'])}), so I couldn't check full-time, visa or aid "
+            "limits."
+        )
+    else:
+        lines.append(
+            f"- Your load goes from {r['credits_before']:g} to {r['credits_after']:g} credit "
+            f"hours [{r['credits_cite']}]."
+        )
+        lines += [f"- {x['message'].rstrip('.')} [{x['cite']}]." for x in r["crossed"]]
+        if below := r["already_below"]:
+            limits = sorted({x["min_credits"] for x in below}, reverse=True)
+            cites = ", ".join(str(x["cite"]) for x in below)
+            lines.append(
+                f"- You're under {' and '.join(f'{m:g}' for m in limits)} credit hours with or "
+                f"without it, so those limits don't change [{cites}]."
+            )
+    if blocked := r["blocked"]:
+        lines.append("- You couldn't take these later courses until you complete it:")
+        lines += [
+            f"  {b['course']} - {b['title']} (would need {', '.join(b['needs'])}) [{b['cite']}]"
+            for b in blocked[:8]
+        ]
+        if len(blocked) > 8:
+            lines.append(f"  ...and {len(blocked) - 8} more")
+    # Only the sources the answer shows: courses past the first 8 are left out.
+    hidden = {b["cite"] for b in blocked[8:]}
+    for c in r["corequisite_of"]:
+        lines.append(
+            f"- {c['course']} - {c['title']} needs {course} in the same term, so it would be "
+            f"affected too [{c['cite']}]."
+        )
+    if not blocked and not r["corequisite_of"]:
+        lines.append("- No later course loses a prerequisite you'd otherwise have.")
+    if n := r["also_delayed"]:
+        lines.append(
+            f"- Up to {n} more course{'s' * (n > 1)} build on those, so later terms may shift too."
+        )
+    lines.append(
+        "\nI haven't checked this against your degree requirements yet. " + ASK_BEFORE_DROPPING
+    )
+    lines.append("")
+    lines += [f"[{i}] {c['source']}" for i, c in enumerate(r["citations"], 1) if i not in hidden]
+    return "\n".join(lines).rstrip()
+
+
 def _render_progress(r: dict[str, Any]) -> str:
     lines = [
         f"{r['program']}: {r['credits_earned']:g} of {r['credits_required']:g} credits earned [1]."
@@ -334,6 +402,7 @@ class CollegeAdvisor(Agent):
             "search_courses",
             "recommend_courses",
             "get_degree_progress",
+            "check_consequences",
         }
     )
 
@@ -345,6 +414,7 @@ class CollegeAdvisor(Agent):
         search: Callable[..., dict[str, Any]] = search_courses,
         recommend: Callable[..., dict[str, Any]] = recommend_courses,
         progress: Callable[..., dict[str, Any]] = get_degree_progress,
+        consequences: Callable[..., dict[str, Any]] = check_consequences,
     ) -> None:
         completed_optional = Field("completed_courses", "", _absent, needed=_never, remember=True)
         # From an uploaded transcript (POST /transcript); never asked for in chat.
@@ -409,6 +479,28 @@ class CollegeAdvisor(Agent):
                 ),
                 tool=search,
                 render=_render_search,
+            ),
+            "drop_course": Scaffold(
+                intent="drop_course",
+                fields=(
+                    Field(
+                        "course",
+                        "Which course are you thinking of dropping? (e.g. CS 351)",
+                        _course,
+                    ),
+                    # Same profile key a transcript upload fills, so it is asked only without one.
+                    Field("in_progress_courses", ASK_CURRENT, _completed, remember=True),
+                    Field(
+                        "completed_courses",
+                        "Which courses have you already completed? "
+                        "List their codes, or say 'none'.",
+                        _completed,
+                        remember=True,
+                    ),
+                    grades,
+                ),
+                tool=consequences,
+                render=_render_consequences,
             ),
             "degree_progress": Scaffold(
                 intent="degree_progress",

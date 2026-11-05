@@ -1,5 +1,5 @@
 ---
-prompt_version: 3
+prompt_version: 4
 ---
 You route messages for a university academic advisor. Pick the intent of the student's latest message.
 $intents
