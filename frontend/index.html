@@ -29,7 +29,7 @@
                 <div class="preset-grid">
                     <div class="preset-card" onclick="loadSampleStudent('senior')">
                         <strong>Alex Johnson (Senior)</strong>
-                        <span>CS Major • 92 Credits • 3.85 GPA</span>
+                        <span>CS Major • 92 Credits • 3.84 GPA</span>
                     </div>
                     <div class="preset-card" onclick="loadSampleStudent('freshman')">
                         <strong>Jordan Lee (Freshman)</strong>
@@ -115,7 +115,7 @@
                 <!-- VIEW 2: DEGREE AUDIT -->
                 <div id="view-audit" class="view-panel generic-view-content hidden">
                     <h2>Degree Requirement Audit</h2>
-                    <p style="margin-bottom: 15px; color: #555;">Summary of progress towards Computer Science degree requirements.</p>
+                    <p style="margin-bottom: 15px; color: #555;">Estimated from your transcript by subject code; not an official degree audit.</p>
                     
                     <table class="audit-table">
                         <thead>
@@ -126,37 +126,8 @@
                                 <th>Status</th>
                             </tr>
                         </thead>
-                        <tbody>
-                            <tr>
-                                <td>Computer Science Core</td>
-                                <td>42</td>
-                                <td>30</td>
-                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
-                            </tr>
-                            <tr>
-                                <td>Mathematics & Science</td>
-                                <td>32</td>
-                                <td>28</td>
-                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
-                            </tr>
-                            <tr>
-                                <td>IPRO Capstone Courses</td>
-                                <td>6</td>
-                                <td>3</td>
-                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
-                            </tr>
-                            <tr>
-                                <td>Humanities & Social Sciences</td>
-                                <td>21</td>
-                                <td>21</td>
-                                <td><span class="status-tag" style="background:#e8f5e9; color:#2e7d32;">Complete</span></td>
-                            </tr>
-                            <tr>
-                                <td>Free Electives</td>
-                                <td>25</td>
-                                <td>10</td>
-                                <td><span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span></td>
-                            </tr>
+                        <tbody id="audit-table-body">
+                            <!-- Filled from the transcript rows by renderDegreeAudit() -->
                         </tbody>
                     </table>
                 </div>

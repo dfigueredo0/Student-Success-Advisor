@@ -1,51 +1,102 @@
 /* -------------------------------------------------------------
    1. APP STATE & MOCK DEGREE DATA
 ------------------------------------------------------------- */
-let currentStudent = {
-    name: "Alex Johnson",
-    major: "B.S. Computer Science",
-    gpa: "3.85",
-    credits: 92,
-    totalCredits: 126
+let currentStudent = { name: "", major: "", gpa: "-", credits: 0, totalCredits: 126 };
+
+// Sample students in the same shape as a POST /transcript response, so they load through the
+// same code path as a real upload. Synthetic records; titles and credits from the catalog.
+function sampleTranscript(name, completed, inProgress) {
+    return {
+        name,
+        major: "Computer Science",
+        courses: [
+            ...completed.map(([course, title, term, grade, credits]) =>
+                ({ course, title, term, grade, credits, status: 'completed' })),
+            ...inProgress.map(([course, title, term, credits]) =>
+                ({ course, title, term, grade: null, credits, status: 'in_progress' })),
+        ],
+    };
+}
+
+const SAMPLE_STUDENTS = {
+    // 92 credits, GPA 3.84; retook CS 330 (D, then A).
+    senior: sampleTranscript("Alex Johnson", [
+        ["BIOL 107", "General Biology Lectures", null, "TR", 3],
+        ["CS 100", "Introduction to the Profession", "Fall 2023", "A", 2],
+        ["CS 115", "Object-Oriented Programming I", "Fall 2023", "A", 2],
+        ["MATH 151", "Calculus I", "Fall 2023", "A", 5],
+        ["COM 101", "Writing in the University", "Fall 2023", "A", 3],
+        ["CHEM 122", "Principles of Chemistry I", "Fall 2023", "B", 3],
+        ["CS 116", "Object-Oriented Programming II", "Spring 2024", "A", 2],
+        ["MATH 152", "Calculus II", "Spring 2024", "B", 5],
+        ["PHYS 123", "General Physics I: Mechanics", "Spring 2024", "A", 4],
+        ["HUM 102", "Industrial Culture", "Spring 2024", "A", 3],
+        ["CS 331", "Data Structures and Algorithms", "Fall 2024", "A", 3],
+        ["CS 330", "Discrete Structures", "Fall 2024", "D", 3],
+        ["MATH 251", "Multivariate and Vector Calculus", "Fall 2024", "A", 4],
+        ["PHYS 221", "General Physics II: Electricity and Magnetism", "Fall 2024", "A", 4],
+        ["PSYC 221", "Introduction to Psychological Science", "Fall 2024", "A", 3],
+        ["CS 330", "Discrete Structures", "Spring 2025", "A", 3],
+        ["CS 340", "Programming Paradigms and Patterns", "Spring 2025", "A", 3],
+        ["CS 350", "Computer Organization and Assembly Language Programming", "Spring 2025", "A", 3],
+        ["MATH 332", "Elementary Linear Algebra", "Spring 2025", "A", 3],
+        ["ECON 211", "Introduction to Economics", "Spring 2025", "A", 3],
+        ["CS 351", "Systems Programming", "Fall 2025", "A", 3],
+        ["CS 430", "Introduction to Algorithms", "Fall 2025", "B", 3],
+        ["MATH 474", "Probability and Statistics", "Fall 2025", "A", 3],
+        ["COM 421", "Technical Communication", "Fall 2025", "A", 3],
+        ["CS 425", "Database Organization", "Fall 2025", "B", 3],
+        ["CS 450", "Operating Systems", "Spring 2026", "A", 3],
+        ["CS 440", "Programming Languages and Translators", "Spring 2026", "A", 3],
+        ["CS 458", "Introduction to Information Security", "Spring 2026", "A", 3],
+        ["CS 487", "Software Engineering I", "Spring 2026", "A", 3],
+        ["MATH 252", "Introduction to Differential Equations", "Spring 2026", "A", 4],
+    ], [
+        ["CS 480", "Introduction to Artificial Intelligence", "Fall 2026", 3],
+        ["CS 484", "Introduction to Machine Learning", "Fall 2026", 3],
+        ["CS 485", "Computers and Society", "Fall 2026", 3],
+        ["IPRO 497", "Interprofessional (IPRO) Project", "Fall 2026", 3],
+    ]),
+    // 16 credits, GPA 3.54.
+    freshman: sampleTranscript("Jordan Lee", [
+        ["COM 101", "Writing in the University", null, "TR", 3],
+        ["CS 100", "Introduction to the Profession", "Spring 2026", "A", 2],
+        ["CS 115", "Object-Oriented Programming I", "Spring 2026", "B", 2],
+        ["MATH 151", "Calculus I", "Spring 2026", "A", 5],
+        ["PHYS 123", "General Physics I: Mechanics", "Spring 2026", "B", 4],
+    ], [
+        ["CS 116", "Object-Oriented Programming II", "Fall 2026", 2],
+        ["MATH 152", "Calculus II", "Fall 2026", 5],
+        ["PHYS 221", "General Physics II: Electricity and Magnetism", "Fall 2026", 4],
+        ["HUM 102", "Industrial Culture", "Fall 2026", 3],
+    ]),
 };
 
-const SAMPLE_COURSES = [
-    // Year 1
-    { id: "CS115", code: "CS 115", title: "Object-Oriented Prog I", term: "Fall Year 1", status: "COMPLETED", credits: 3, prereqs: [], desc: "Intro to programming using Java." },
-    { id: "MATH151", code: "MATH 151", title: "Calculus I", term: "Fall Year 1", status: "COMPLETED", credits: 5, prereqs: [], desc: "Functions, limits, and derivatives." },
-    { id: "CS116", code: "CS 116", title: "Object-Oriented Prog II", term: "Spring Year 1", status: "COMPLETED", credits: 3, prereqs: ["CS115"], desc: "Advanced Java, pointers, and memory." },
-    { id: "MATH152", code: "MATH 152", title: "Calculus II", term: "Spring Year 1", status: "COMPLETED", credits: 5, prereqs: ["MATH151"], desc: "Integration and series." },
-
-    // Year 2
-    { id: "CS331", code: "CS 331", title: "Data Structures & Algo", term: "Fall Year 2", status: "COMPLETED", credits: 3, prereqs: ["CS116"], desc: "Trees, graphs, hash tables, sorting." },
-    { id: "CS330", code: "CS 330", title: "Discrete Structures", term: "Fall Year 2", status: "COMPLETED", credits: 3, prereqs: ["MATH152"], desc: "Logic, set theory, and proofs." },
-    { id: "CS350", code: "CS 350", title: "Computer Organization", term: "Spring Year 2", status: "IN_PROGRESS", credits: 3, prereqs: ["CS116"], desc: "Assembly language and architecture." },
-    { id: "CS351", code: "CS 351", title: "Systems Programming", term: "Spring Year 2", status: "IN_PROGRESS", credits: 3, prereqs: ["CS331"], desc: "C programming and system calls." },
-
-    // Year 3
-    { id: "CS425", code: "CS 425", title: "Database Organization", term: "Fall Year 3", status: "UNLOCKED", credits: 3, prereqs: ["CS331"], desc: "Relational database models and SQL." },
-    { id: "CS450", code: "CS 450", title: "Operating Systems", term: "Fall Year 3", status: "LOCKED", credits: 3, prereqs: ["CS351", "CS350"], desc: "Processes, concurrency, memory." },
-
-    // Year 4
-    { id: "IPRO497", code: "IPRO 497", title: "Interprofessional Project", term: "Spring Year 4", status: "UNLOCKED", credits: 3, prereqs: ["CS331"], desc: "Multidisciplinary team project capstone." }
-];
-
-const SAMPLE_TERMS = ["Fall Year 1", "Spring Year 1", "Fall Year 2", "Spring Year 2", "Fall Year 3", "Spring Year 4"];
-
-// What the page shows right now: a sample student, or the courses parsed from an upload.
-let courseDatabase = SAMPLE_COURSES.map(cloneCourse);
-let terms = SAMPLE_TERMS;
-// The last /transcript response, so "Reset Defaults" can restore what was parsed.
+// What the page shows right now: the courses of a sample student or of an upload.
+let courseDatabase = [];
+let terms = [];
+// The transcript last loaded, so "Reset Defaults" can restore it.
 let parsedTranscript = null;
 
 const TRANSFER_TERM = "Transfer Credit";
 const SEASON_ORDER = { Spring: 0, Summer: 1, Fall: 2 };
-// Grades the transcript parser can return, plus IP for a course still in progress.
-const GRADE_OPTIONS = ["A", "A-", "B+", "B", "B-", "C+", "C", "C-", "D", "E", "F", "TR", "IP"];
+// IIT letter grades (no +/-; domain/grades.py), TR for transfer, IP while in progress.
+const GRADE_POINTS = { A: 4, B: 3, C: 2, D: 1, E: 0, F: 0 };
+const GRADE_OPTIONS = ["A", "B", "C", "D", "E", "F", "TR", "IP"];
 
-function cloneCourse(c) {
-    return { ...c, prereqs: [...c.prereqs] };
-}
+// Degree Audit categories by subject code. Credits past a category's requirement count as
+// free electives.
+// TODO: frontend - an estimate by subject, not an audit: replace with get_degree_progress
+// once it lands (it raises NotImplementedError today). Required credits are unverified mock
+// figures, not checked against the bulletin.
+const AUDIT_CATEGORIES = [
+    { name: "Computer Science Core", required: 42, subjects: ["CS"] },
+    { name: "Mathematics & Science", required: 32, subjects: ["MATH", "PHYS", "CHEM", "BIOL"] },
+    { name: "IPRO Capstone Courses", required: 6, subjects: ["IPRO"] },
+    { name: "Humanities & Social Sciences", required: 21,
+      subjects: ["HUM", "COM", "PSYC", "ECON", "PHIL", "HIST", "SOC", "PS", "AAH", "LIT"] },
+    { name: "Free Electives", required: 25, subjects: null },
+];
 
 // Course titles and terms come out of an uploaded PDF, so they are escaped before they go
 // into innerHTML.
@@ -54,13 +105,27 @@ function esc(value) {
     return String(value ?? '').replace(/[&<>"']/g, ch => map[ch]);
 }
 
-// Terms found in the courses, oldest first, with transfer credit before everything else.
+// Chronological sort key; transfer credit (no season/year) sorts before everything else.
+function termKey(t) {
+    const m = /^(Spring|Summer|Fall) (\d{4})$/.exec(t);
+    return m ? Number(m[2]) * 3 + SEASON_ORDER[m[1]] : -1;
+}
+
+// Terms found in the courses, oldest first.
 function termsFor(courses) {
-    const key = t => {
-        const m = /^(Spring|Summer|Fall) (\d{4})$/.exec(t);
-        return m ? Number(m[2]) * 3 + SEASON_ORDER[m[1]] : -1;
-    };
-    return [...new Set(courses.map(c => c.term))].sort((a, b) => key(a) - key(b));
+    return [...new Set(courses.map(c => c.term))].sort((a, b) => termKey(a) - termKey(b));
+}
+
+// The regular term after `t` (summer skipped), so a course can be moved to a new term.
+function nextTerm(t) {
+    const m = /^(Spring|Summer|Fall) (\d{4})$/.exec(t);
+    if (!m) return null;
+    return m[1] === 'Fall' ? `Spring ${Number(m[2]) + 1}` : `Fall ${m[2]}`;
+}
+
+// Courses sorted oldest term first, so a later attempt of a retaken course wins.
+function chronological(courses) {
+    return [...courses].sort((a, b) => termKey(a.term) - termKey(b.term));
 }
 
 /* -------------------------------------------------------------
@@ -143,36 +208,50 @@ function loadParsedTranscript(data) {
             : c.term ? `Taken ${c.term}, grade ${c.grade}.` : 'Transfer credit.',
     }));
     terms = termsFor(courseDatabase);
-    // The parser never reads the student's name, so none is shown. The transcript prints the
-    // major as "<major>, <department>" (often the same words twice); show the major only.
+    // The parser never reads the student's name; only sample students carry one. The
+    // transcript prints the major as "<major>, <department>" (often the same words twice);
+    // show the major only. GPA and credits are computed from the rows (syncStudentMetrics),
+    // so they follow edits.
     currentStudent = {
-        name: "Uploaded transcript",
+        name: data.name || "Uploaded transcript",
         major: (data.major || "").split(",")[0].trim() || "Not found on transcript",
-        gpa: data.gpa == null ? "-" : data.gpa.toFixed(2),
+        gpa: "-",
         credits: 0,
         totalCredits: 126,
     };
     showWorkspace();
 }
 
-function loadSampleStudent(type) {
-    parsedTranscript = null;
-    courseDatabase = SAMPLE_COURSES.map(cloneCourse);
-    terms = SAMPLE_TERMS;
-    if (type === 'senior') {
-        currentStudent = { name: "Alex Johnson", major: "B.S. CS", gpa: "3.85", credits: 92, totalCredits: 126 };
-        courseDatabase.find(c => c.id === 'CS350').status = 'IN_PROGRESS';
-        courseDatabase.find(c => c.id === 'CS351').status = 'IN_PROGRESS';
-        courseDatabase.find(c => c.id === 'CS425').status = 'UNLOCKED';
-        courseDatabase.find(c => c.id === 'CS450').status = 'LOCKED';
-    } else {
-        currentStudent = { name: "Jordan Lee", major: "B.S. CS", gpa: "3.50", credits: 16, totalCredits: 126 };
-        courseDatabase.find(c => c.id === 'CS350').status = 'LOCKED';
-        courseDatabase.find(c => c.id === 'CS351').status = 'LOCKED';
-        courseDatabase.find(c => c.id === 'CS425').status = 'LOCKED';
-        courseDatabase.find(c => c.id === 'CS450').status = 'LOCKED';
+async function loadSampleStudent(type) {
+    loadParsedTranscript(SAMPLE_STUDENTS[type]);
+    // A real upload seeds the advisor's memory through /transcript; a sample has no PDF, so
+    // its record goes in through /chat/import (the advisor says it came from a saved chat).
+    try {
+        const res = await fetch('/chat/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ format: 'ssa-saved-chat', version: 1, profile: advisorProfile() }),
+        });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        chatThreadId = (await res.json()).thread_id;
+    } catch (err) {
+        appendMessage(`The advisor couldn't load this sample's courses: ${err.message}`, 'system');
     }
-    showWorkspace();
+}
+
+// The rows as the advisor's profile: the same fields /transcript stores.
+function advisorProfile() {
+    const grades = {};
+    chronological(courseDatabase)
+        .filter(c => c.status === 'COMPLETED' && (c.grade in GRADE_POINTS || c.grade === 'TR'))
+        .forEach(c => { grades[c.code] = c.grade; });
+    return {
+        completed_courses: Object.keys(grades),
+        in_progress_courses: [...new Set(
+            courseDatabase.filter(c => c.status === 'IN_PROGRESS').map(c => c.code))],
+        grades,
+        major: currentStudent.major,
+    };
 }
 
 function showWorkspace() {
@@ -205,11 +284,14 @@ function resetToUpload() {
 function renderTranscriptTable() {
     const tbody = document.getElementById('transcript-table-body');
     tbody.innerHTML = '';
+    // Existing terms plus the next one, so a course can be moved to a term not yet on the map.
+    const next = nextTerm(terms[terms.length - 1]);
+    const termOptions = next ? [...terms, next] : terms;
 
     courseDatabase.forEach((course, index) => {
         const tr = document.createElement('tr');
-        // What the grade box shows: the parsed grade, IP while in progress, A for sample rows.
-        const shownGrade = course.grade || (course.status === 'IN_PROGRESS' ? 'IP' : 'A');
+        // What the grade box shows: the grade, IP while in progress, blank when none is known.
+        const shownGrade = course.grade || (course.status === 'IN_PROGRESS' ? 'IP' : '');
         const gradeOptions = GRADE_OPTIONS.includes(shownGrade) ? GRADE_OPTIONS : [...GRADE_OPTIONS, shownGrade];
         tr.innerHTML = `
             <td>
@@ -220,7 +302,7 @@ function renderTranscriptTable() {
             </td>
             <td>
                 <select onchange="updateCourseField(${index}, 'term', this.value)">
-                    ${terms.map(t => `<option value="${esc(t)}" ${course.term === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}
+                    ${termOptions.map(t => `<option value="${esc(t)}" ${course.term === t ? 'selected' : ''}>${esc(t)}</option>`).join('')}
                 </select>
             </td>
             <td>
@@ -228,7 +310,7 @@ function renderTranscriptTable() {
             </td>
             <td>
                 <select onchange="updateCourseField(${index}, 'grade', this.value)">
-                    ${gradeOptions.map(g => `<option value="${esc(g)}" ${g === shownGrade ? 'selected' : ''}>${g === 'IP' ? 'In Prog' : esc(g)}</option>`).join('')}
+                    ${gradeOptions.map(g => `<option value="${esc(g)}" ${g === shownGrade ? 'selected' : ''}>${g === 'IP' ? 'In Prog' : g === '' ? '-' : esc(g)}</option>`).join('')}
                 </select>
             </td>
             <td>
@@ -248,26 +330,38 @@ function renderTranscriptTable() {
 }
 
 function updateCourseField(index, field, value) {
-    courseDatabase[index][field] = value;
-    
-    // Recalculate automatic prerequisites and status dependency
+    const course = courseDatabase[index];
+    course[field] = value;
+    // Grade and status move together: a grade completes the course, IP puts it in progress.
+    if (field === 'grade') {
+        course.status = value === 'IP' ? 'IN_PROGRESS' : 'COMPLETED';
+        if (value === 'IP') course.grade = '';
+    }
+    if (field === 'status' && value === 'IN_PROGRESS') course.grade = '';
+    if (field === 'term') terms = termsFor(courseDatabase);
+
     recalculatePrerequisites();
     syncStudentMetrics();
     renderFlowchart();
+    // Text and number fields re-render nothing else; re-rendering would steal focus.
+    if (field === 'grade' || field === 'status' || field === 'term') renderTranscriptTable();
 }
 
 function addNewTranscriptRow() {
-    const newCourse = {
+    // A completed course with a grade, so the credits and GPA reflect it straight away.
+    courseDatabase.push({
         id: "CUSTOM_" + Date.now(),
         code: "CS 4XX",
         title: "New Elective Course",
-        term: terms[terms.length - 1],
-        status: "UNLOCKED",
+        term: terms[terms.length - 1] || TRANSFER_TERM,
+        status: "COMPLETED",
+        grade: "A",
         credits: 3,
         prereqs: [],
-        desc: "User added course module."
-    };
-    courseDatabase.push(newCourse);
+        fromTranscript: true,
+        desc: "Added by hand.",
+    });
+    terms = termsFor(courseDatabase);
     recalculatePrerequisites();
     syncStudentMetrics();
     renderTranscriptTable();
@@ -276,6 +370,7 @@ function addNewTranscriptRow() {
 
 function deleteCourseRow(index) {
     courseDatabase.splice(index, 1);
+    terms = termsFor(courseDatabase);
     recalculatePrerequisites();
     syncStudentMetrics();
     renderTranscriptTable();
@@ -283,10 +378,8 @@ function deleteCourseRow(index) {
 }
 
 function resetTranscriptData() {
-    // Back to what was parsed from the upload, or to the sample student if none was uploaded.
-    if (parsedTranscript) loadParsedTranscript(parsedTranscript);
-    else loadSampleStudent('senior');
-    renderTranscriptTable();
+    // Back to the transcript as loaded (upload or sample); the conversation carries on.
+    loadParsedTranscript(parsedTranscript);
 }
 
 function recalculatePrerequisites() {
@@ -307,18 +400,59 @@ function recalculatePrerequisites() {
 }
 
 function syncStudentMetrics() {
+    const ordered = chronological(courseDatabase);
     // Credits earned count once per course: a retaken course appears on the transcript twice,
     // and a failed attempt earns nothing.
     const earned = new Map();
-    courseDatabase.forEach(c => {
+    ordered.forEach(c => {
         if (c.status === 'COMPLETED' && c.grade !== 'E' && c.grade !== 'F') earned.set(c.code, c.credits);
     });
     currentStudent.credits = [...earned.values()].reduce((sum, cr) => sum + cr, 0);
+
+    // GPA as the transcript computes it (schemas/student.py Transcript.gpa): grade points over
+    // credit hours, latest attempt of each course, transfer credit excluded.
+    const latest = new Map();
+    ordered.forEach(c => {
+        if (c.status === 'COMPLETED' && c.term !== TRANSFER_TERM && c.grade in GRADE_POINTS) latest.set(c.code, c);
+    });
+    const hours = [...latest.values()].reduce((sum, c) => sum + c.credits, 0);
+    const points = [...latest.values()].reduce((sum, c) => sum + GRADE_POINTS[c.grade] * c.credits, 0);
+    currentStudent.gpa = hours ? (points / hours).toFixed(2) : "-";
 
     document.getElementById('info-name').innerText = currentStudent.name;
     document.getElementById('info-major').innerText = currentStudent.major;
     document.getElementById('info-gpa').innerText = currentStudent.gpa;
     document.getElementById('info-credits').innerText = `${currentStudent.credits} / ${currentStudent.totalCredits}`;
+    renderDegreeAudit(earned);
+}
+
+// `earned`: course code -> credits earned, from syncStudentMetrics.
+function renderDegreeAudit(earned) {
+    const done = AUDIT_CATEGORIES.map(() => 0);
+    const elective = AUDIT_CATEGORIES.findIndex(cat => !cat.subjects);
+    earned.forEach((credits, code) => {
+        const subject = String(code).trim().split(/\s+/)[0].toUpperCase();
+        const i = AUDIT_CATEGORIES.findIndex(cat => cat.subjects && cat.subjects.includes(subject));
+        done[i === -1 ? elective : i] += credits;
+    });
+    AUDIT_CATEGORIES.forEach((cat, i) => {
+        if (i !== elective && done[i] > cat.required) {
+            done[elective] += done[i] - cat.required;
+            done[i] = cat.required;
+        }
+    });
+    const tag = (done, required) => done >= required
+        ? '<span class="status-tag" style="background:#e8f5e9; color:#2e7d32;">Complete</span>'
+        : done > 0
+            ? '<span class="status-tag" style="background:#fff3e0; color:#ed6c02;">In Progress</span>'
+            : '<span class="status-tag" style="background:#eee; color:#555;">Not Started</span>';
+    document.getElementById('audit-table-body').innerHTML = AUDIT_CATEGORIES.map((cat, i) => `
+        <tr>
+            <td>${cat.name}</td>
+            <td>${cat.required}</td>
+            <td>${done[i]}</td>
+            <td>${tag(done[i], cat.required)}</td>
+        </tr>`).join('');
 }
 
 /* -------------------------------------------------------------
@@ -412,6 +546,8 @@ async function sendMessage() {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = await res.json();
         chatThreadId = data.thread_id;
+        // TODO: frontend - data.citations carries each source's url and quote; the answer only
+        // names them. Drop answers (UC-09) cite policy pages students will want to open.
         appendMessage(data.answer, 'system');
     } catch (err) {
         appendMessage(`Advisor unavailable: ${err.message}`, 'system');
