@@ -12,6 +12,7 @@ from langfuse import Langfuse
 from langgraph.checkpoint.postgres import PostgresSaver
 
 from api.routes import chat, saved_chat, transcript
+from api.tracing import mask_trace
 from memory.retention import delete_stale_conversations
 from orchestrator.graph import build_graph
 from settings import get_settings
@@ -41,6 +42,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         public_key=s.langfuse_public_key,
         secret_key=s.langfuse_secret_key.get_secret_value(),
         host=s.langfuse_host,
+        mask=mask_trace,
     )
     # one checkpointer connection behind PostgresSaver's lock;
     # move to psycopg_pool.ConnectionPool when concurrent chats matter.
