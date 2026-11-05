@@ -2,14 +2,15 @@
 
     uv run python -m eval.harness --mode regex   # pattern stage only; hermetic
     uv run python -m eval.harness --mode model   # small model on every item (needs `make up`)
-    uv run python -m eval.harness --mode full    # production path: patterns -> model -> clarify
+    uv run python -m eval.harness --mode full    # production path: hand-offs -> patterns -> model
 
 Gold intents trace to the Researcher's survey areas (data/research_findings.json, F02/F06/
 F07/F08/F10); the wording is ours, not collected student messages. Out-of-scope items have
 intent null: the right answer is a clarify. Follow-up items carry the conversation before the
 message in `history` ({"role", "content"} messages), which the model stage sees and the pattern
-stage does not, and the intent of its last request in `previous_intent`. Results go to
-eval/results/.
+stage does not, and the intent of its last request in `previous_intent`. `pending` items reply
+to the advisor's question (history ends with it): gold is `previous_intent` for an answer, the
+new intent for a change of topic. Results go to eval/results/.
 """
 
 import argparse
@@ -20,6 +21,7 @@ from pathlib import Path
 from typing import Any
 
 from eval.metrics import score
+from orchestrator.escalation import escalate
 from orchestrator.router import (
     FOLLOW_UP,
     ROUTER_PROMPT,
@@ -73,24 +75,31 @@ def predict(
     gateway: Gateway,
     history: list[dict[str, str]] | None = None,
     previous: str | None = None,
+    pending: bool = False,
 ) -> tuple[str | None, str, float]:
-    """(intent or None for clarify, stage that decided, confidence)."""
+    """(intent or None for clarify, stage that decided, confidence). `pending`: the advisor
+    asked a question, so anything but a clear new request keeps `previous` (the answer)."""
     if mode == "regex":
-        hit = regex_route(text)
-        return (hit.intent, "regex", hit.confidence) if hit else (None, "clarify", 0.0)
+        hit = regex_route(text, previous if pending else None)
+        if hit:
+            return hit.intent, "regex", hit.confidence
+        return (previous if pending else None), "clarify", 0.0
     if mode == "model":
         intent, confidence = ollama_classify(text, history, gateway)
         if intent == FOLLOW_UP:
             intent = previous
         if intent is not None and confidence >= threshold:
             return intent, "model", confidence
-        return None, "clarify", confidence
+        return (previous if pending else None), "clarify", confidence
+    if escalate(text):  # production hands these off before the router; gold is null
+        return None, "escalation", 1.0
     r = route(
         text,
         classify=lambda t, h: ollama_classify(t, h, gateway),
         threshold=threshold,
         history=history,
         previous=previous,
+        answering=pending,
     )
     return r.intent, r.source, r.confidence
 
@@ -102,7 +111,13 @@ def run(mode: str) -> dict[str, Any]:
     for item in load_gold():
         gateway.error = gateway.ms = None
         predicted, stage, confidence = predict(
-            item["text"], mode, threshold, gateway, item.get("history"), item.get("previous_intent")
+            item["text"],
+            mode,
+            threshold,
+            gateway,
+            item.get("history"),
+            item.get("previous_intent"),
+            item.get("pending", False),
         )
         rows.append(
             {

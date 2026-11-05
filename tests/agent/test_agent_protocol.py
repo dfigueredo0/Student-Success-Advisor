@@ -21,7 +21,7 @@ def advisor(check: FakeTool) -> CollegeAdvisor:
 
 def test_eligibility_calls_tool_with_valid_args_and_cites() -> None:
     check = FakeTool("check_prerequisites", eligibility_result())
-    llm = FakeLLM()  # regex routes this message: any model call fails the test
+    llm = FakeLLM(FakeLLM.route("check_eligibility", 0.9))
     graph = build_graph(agents=[advisor(check)], classify=llm.classify)
 
     state = graph.invoke(turn_input("Can I take CS 450? I've taken CS 351."))
@@ -37,7 +37,7 @@ def test_eligibility_calls_tool_with_valid_args_and_cites() -> None:
     assert [c["name"] for c in state["tool_calls"]] == ["check_prerequisites"]
     assert len(state["citations"]) >= 1 and "[1]" in state["answer"]
     assert state["messages"][-1] == {"role": "assistant", "content": state["answer"]}
-    assert llm.requests == []
+    assert len(llm.requests) == 1  # routing only; the answer is templated
 
 
 def test_model_routed_eligibility_reaches_the_tool() -> None:
@@ -136,6 +136,22 @@ def test_regex_route_has_no_prompt_version() -> None:
     assert graph.invoke(turn_input("Can I take CS 450?"))["prompt_version"] is None
 
 
+def test_reply_mid_question_is_checked_by_the_model_and_answers_on_failure() -> None:
+    check = FakeTool("check_prerequisites", eligibility_result())
+    llm = FakeLLM(httpx.ConnectError("gateway down"))
+    graph = build_graph(InMemorySaver(), agents=[advisor(check)], classify=llm.classify)
+    config = {"configurable": {"thread_id": "t"}}
+    graph.invoke(turn_input("Can I take CS 450?"), config)  # whole-message pattern: no model
+
+    state = graph.invoke(turn_input("CS 351"), config)
+
+    prompt = llm.requests[0]["messages"][0]["content"]
+    assert "Advisor: Which courses have you already completed?" in prompt
+    assert state["intent"] == "check_eligibility"
+    assert state["prompt_version"] == ROUTER_PROMPT.version
+    assert check.calls[0]["completed_courses"] == ["CS 351"]
+
+
 def test_follow_up_resolves_a_course_from_an_earlier_answer() -> None:
     check = FakeTool("check_prerequisites", eligibility_result("CS 484"))
     search = FakeTool(
@@ -154,6 +170,7 @@ def test_follow_up_resolves_a_course_from_an_earlier_answer() -> None:
         # The course is in the advisor's list. Completed courses are facts about the student,
         # so one only the advisor mentioned is not taken.
         {"course": "CS 484", "completed_courses": "CS 484"},
+        FakeLLM.route("follow_up", 0.9),  # "CS 351" answers the advisor's question
     )
     graph = build_graph(
         InMemorySaver(),

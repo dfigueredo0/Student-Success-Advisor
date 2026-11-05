@@ -1,9 +1,9 @@
 ---
-prompt_version: 2
+prompt_version: 3
 ---
 You route messages for a university academic advisor. Pick the intent of the student's latest message.
 $intents
-- follow_up: only adds or swaps one detail of the previous request ("and for SQL?", "what about CS 485?") and asks nothing new
+- follow_up: continues the previous request and asks nothing new: answers the advisor's last question ("CS 115 and MATH 151", "none"), or swaps one detail ("and for SQL?", "what about CS 485?")
 - none: anything else
 
 $examples

@@ -22,7 +22,7 @@ from agents.college_advisor import CollegeAdvisor
 from orchestrator.escalation import escalate
 from orchestrator.followup import Filler, fill_slots
 from orchestrator.merge import merge
-from orchestrator.router import Classifier, ollama_classify, regex_route, route
+from orchestrator.router import Classifier, ollama_classify, route
 from orchestrator.state import State
 
 
@@ -51,20 +51,21 @@ def build_graph(
                 "pending_field": None,
                 "handoff": hit.reply,
             }
-        if state.get("pending_field") and state.get("route") in by_name:
-            # Mid-scaffold the message is usually the answer to the agent's question; only a
-            # strong regex hit for a different intent means the student changed topic.
-            r = regex_route(text, strong_only=True)
-            if r is None or r.intent == state.get("intent") or r.agent not in by_name:
-                return {}
-            reset: dict[str, Any] = {"slots": {}, "pending_field": None}
-        else:
-            earlier, previous = state["messages"][:-1], state.get("intent")
-            r, reset = route(text, classify, history=earlier, previous=previous), {}
+        earlier, previous = state["messages"][:-1], state.get("intent")
+        # Mid-scaffold the message is usually the answer to the agent's question; the model
+        # (seeing that question in the conversation) or a sure pattern decides whether the
+        # student changed topic instead.
+        answering = bool(state.get("pending_field")) and state.get("route") in by_name
+        r = route(text, classify, history=earlier, previous=previous, answering=answering)
         if r.prompt_version:
             get_client().update_current_span(
                 version=r.prompt_version, metadata={"prompt_version": r.prompt_version}
             )
+        reset: dict[str, Any] = {}
+        if answering:
+            if r.intent == previous or r.agent not in by_name:
+                return {"prompt_version": r.prompt_version}
+            reset = {"slots": {}, "pending_field": None}
         return reset | {
             "intent": r.intent,
             "route": r.agent,
