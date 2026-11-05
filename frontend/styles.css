@@ -573,3 +573,95 @@ header .logo {
     margin-bottom: 8px;
     color: #444;
 }
+
+/* -------------------------------------------------------------
+   RESIZE HANDLE & CALENDAR SECTION STYLES
+------------------------------------------------------------- */
+.resize-handle {
+    height: 6px;
+    background-color: #e0e0e0;
+    border-top: 1px solid #cccccc;
+    border-bottom: 1px solid #cccccc;
+    cursor: row-resize;
+    position: relative;
+    user-select: none;
+    z-index: 10;
+}
+
+.resize-handle:hover,
+.resize-handle.resizing {
+    background-color: #0052cc;
+    border-color: #003d99;
+}
+
+.calendar-section {
+    background-color: #ffffff;
+    height: 240px;
+    min-height: 100px;
+    max-height: 500px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.calendar-header {
+    background-color: #f9f9f9;
+    border-bottom: 1px solid #dddddd;
+    padding: 6px 15px;
+    font-size: 12px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.calendar-grid-container {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px 15px;
+}
+
+.calendar-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 11px;
+    table-layout: fixed;
+}
+
+.calendar-table th, 
+.calendar-table td {
+    border: 1px solid #e0e0e0;
+    padding: 6px;
+    text-align: center;
+    height: 38px;
+    vertical-align: middle;
+}
+
+.calendar-table th {
+    background-color: #f2f2f2;
+    font-weight: bold;
+    color: #333333;
+}
+
+.calendar-table td.time-col {
+    background-color: #fafafa;
+    font-weight: bold;
+    color: #666666;
+    font-size: 10px;
+}
+
+.calendar-event-card {
+    background-color: #e1f5fe;
+    border: 1px solid #81d4fa;
+    border-left: 3px solid #0288d1;
+    color: #01579b;
+    padding: 2px 4px;
+    border-radius: 2px;
+    font-size: 10px;
+    text-align: left;
+    line-height: 1.2;
+}
+
+.calendar-event-card strong {
+    display: block;
+    font-size: 11px;
+}

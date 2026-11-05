@@ -94,7 +94,7 @@
             <!-- CENTER MAIN CONTENT AREA -->
             <div class="main-content-area">
                 
-                <!-- VIEW 1: TRAJECTORY FLOWCHART -->
+                <!-- VIEW 1: TRAJECTORY FLOWCHART & CALENDAR -->
                 <div id="view-trajectory" class="view-panel">
                     <div class="trajectory-toolbar">
                         <strong>Course Trajectory & Prerequisites Flow Map</strong>
@@ -109,6 +109,34 @@
 
                     <div class="flowchart-board" id="flowchart-board">
                         <!-- Dynamic Term Columns loaded via JavaScript -->
+                    </div>
+
+                    <!-- RESIZE DRAG HANDLE -->
+                    <div id="calendar-drag-handle" class="resize-handle" title="Drag up or down to resize calendar"></div>
+
+                    <!-- CALENDAR SECTION AT BOTTOM OF TRAJECTORY MAP -->
+                    <div id="calendar-section" class="calendar-section">
+                        <div class="calendar-header">
+                            <strong>Weekly Class Schedule View</strong>
+                            <span style="font-size: 11px; color: #666;">(Active Term Enrolled / Planned Courses)</span>
+                        </div>
+                        <div class="calendar-grid-container">
+                            <table class="calendar-table">
+                                <thead>
+                                    <tr>
+                                        <th style="width: 10%;">Time</th>
+                                        <th style="width: 18%;">Monday</th>
+                                        <th style="width: 18%;">Tuesday</th>
+                                        <th style="width: 18%;">Wednesday</th>
+                                        <th style="width: 18%;">Thursday</th>
+                                        <th style="width: 18%;">Friday</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="calendar-body">
+                                    <!-- Dynamic Schedule Rows Loaded via JavaScript -->
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
@@ -127,7 +155,7 @@
                             </tr>
                         </thead>
                         <tbody id="audit-table-body">
-                            <!-- Filled from the transcript rows by renderDegreeAudit() -->
+                            <!-- Filled from transcript rows -->
                         </tbody>
                     </table>
                 </div>
@@ -137,7 +165,7 @@
                     <div class="table-actions-bar">
                         <div>
                             <h2>Parsed Transcript & Course Records</h2>
-                            <p style="color: #555; font-size: 12px;">Modify parsed course details below. Changes automatically update your Trajectory Map and prerequisites.</p>
+                            <p style="color: #555; font-size: 12px;">Modify course details and meeting schedules below. Updates automatically sync to your Trajectory Map & Calendar.</p>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn" onclick="addNewTranscriptRow()">+ Add Course</button>
@@ -148,13 +176,14 @@
                     <table class="audit-table transcript-edit-table">
                         <thead>
                             <tr>
-                                <th style="width: 15%;">Course Code</th>
-                                <th style="width: 25%;">Course Title</th>
-                                <th style="width: 18%;">Term</th>
-                                <th style="width: 10%;">Credits</th>
-                                <th style="width: 10%;">Grade</th>
-                                <th style="width: 14%;">Status</th>
-                                <th style="width: 8%; text-align: center;">Action</th>
+                                <th style="width: 12%;">Course Code</th>
+                                <th style="width: 22%;">Course Title</th>
+                                <th style="width: 14%;">Term</th>
+                                <th style="width: 18%;">Meeting Schedule</th>
+                                <th style="width: 8%;">Credits</th>
+                                <th style="width: 8%;">Grade</th>
+                                <th style="width: 12%;">Status</th>
+                                <th style="width: 6%; text-align: center;">Action</th>
                             </tr>
                         </thead>
                         <tbody id="transcript-table-body">
@@ -169,8 +198,8 @@
                 <div class="chat-header">
                     <span>AI Advisor Assistant</span>
                     <span class="chat-header-actions">
-                        <button class="btn-secondary" onclick="saveChat()" title="Download this conversation as a file">Save chat</button>
-                        <button class="btn-secondary" onclick="document.getElementById('chat-file-input').click()" title="Continue from a saved chat file">Load chat</button>
+                        <button class="btn-secondary" onclick="saveChat()" title="Download conversation file">Save chat</button>
+                        <button class="btn-secondary" onclick="document.getElementById('chat-file-input').click()" title="Load chat file">Load chat</button>
                         <input type="file" id="chat-file-input" accept=".json,application/json" hidden onchange="loadChat(this)">
                     </span>
                 </div>
