@@ -100,3 +100,9 @@ def test_every_reply_says_who_to_contact() -> None:
     for message, _ in HAND_OFFS:
         reply = escalate(message).reply
         assert "advisor" in reply.lower() or "988" in reply or "office" in reply.lower()
+
+
+def test_visa_questions_name_the_office_of_global_services() -> None:
+    for message in ["If I drop to 9 credits will I lose my F-1 status?", "Should I withdraw?"]:
+        reply = escalate(message).reply
+        assert "Office of Global Services" in reply and "International Center" not in reply
