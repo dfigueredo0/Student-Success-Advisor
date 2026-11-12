@@ -81,8 +81,8 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         ),
         "Questions about financial aid, tuition, visas or legal matters need an official "
         "answer, so I won't guess. Please contact the Office of Financial Aid (aid and "
-        "scholarships), the Student Accounting office (bills and tuition), or the International "
-        "Center (visa and enrollment status) before you change your schedule.",
+        "scholarships), the Student Accounting office (bills and tuition), or the Office of "
+        "Global Services (visa and enrollment status) before you change your schedule.",
     ),
     (
         "withdrawal",
@@ -96,7 +96,8 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         ),
         "Withdrawing can affect your financial aid, a student visa, and how long your degree "
         "takes, so please talk to your academic advisor before you do it. If you get aid or "
-        "are on a visa, check with the Office of Financial Aid or the International Center too.",
+        "are on a visa, check with the Office of Financial Aid or the Office of Global Services "
+        "too.",
     ),
     (
         "major_change",
