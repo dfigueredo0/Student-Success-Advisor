@@ -4,6 +4,8 @@ it blocks by mistake, on the injection gold set plus the routing questions.
     uv run python -m eval.injection_detectors                    # pattern guardrail; hermetic
     uv run --with "transformers>=4.44,<5" --with torch --with sentencepiece --with protobuf \\
         python -m eval.injection_detectors --detector protectai   # local DeBERTa classifier
+    (same command with --detector promptguard for Meta's Prompt Guard 2; its download needs
+    a Hugging Face login with the Llama licence accepted)
 
 Cases (data/gold/injection.jsonl) come from three sources, scored separately:
   * written: our advisor-specific attacks and tricky normal questions
@@ -76,7 +78,24 @@ def protectai_detector() -> Detector:
     return lambda text: classify(text)[0]["label"] == "INJECTION"
 
 
-DETECTORS = {"patterns": pattern_detector, "protectai": protectai_detector}
+def promptguard_detector() -> Detector:
+    from transformers import pipeline  # optional: see the module docstring
+
+    classify = pipeline(
+        "text-classification",
+        model="meta-llama/Llama-Prompt-Guard-2-86M",
+        truncation=True,
+        max_length=512,
+    )
+    classify("warm up")
+    return lambda text: classify(text)[0]["label"] == "LABEL_1"  # LABEL_0 is benign
+
+
+DETECTORS = {
+    "patterns": pattern_detector,
+    "promptguard": promptguard_detector,
+    "protectai": protectai_detector,
+}
 
 
 def score(rows: list[dict[str, Any]]) -> dict[str, Any]:
