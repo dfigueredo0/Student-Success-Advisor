@@ -17,7 +17,8 @@ class State(TypedDict, total=False):
     pending_field: str | None
     # What the student has told us (completed_courses, subject, ...); kept for the whole thread
     # so it is asked once. Self-reported, so untrusted. POST /transcript adds grades
-    # (course -> grade), in_progress_courses and major from an uploaded transcript.
+    # (course -> grade), in_progress_courses and major from an uploaded transcript; POST /resume
+    # adds current_skills, degree_level and graduation_year from an uploaded resume.
     # TODO: needs impl - seed from tools.advisor.get_student_record once api.auth gives a
     # student_id, instead of asking in chat.
     profile: dict[str, Any]

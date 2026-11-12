@@ -19,10 +19,11 @@ from langgraph.graph.state import CompiledStateGraph
 from agents.base import Agent
 from agents.career_advisor import CareerAdvisor
 from agents.college_advisor import CollegeAdvisor
+from domain.posting import is_posting
 from orchestrator.escalation import escalate
 from orchestrator.followup import Filler, fill_slots
 from orchestrator.merge import merge
-from orchestrator.router import Classifier, ollama_classify, route
+from orchestrator.router import Classifier, ollama_classify, regex_route, route
 from orchestrator.state import State
 from schemas.logs import VerifierRun
 from settings import get_settings
@@ -43,7 +44,10 @@ def build_graph(
         text = state["messages"][-1]["content"]
         # Hand-offs come first, even mid-scaffold: "I'm having suicidal thoughts" in reply to
         # "Which courses have you completed?" must not be read as an answer.
-        if hit := escalate(text):
+        # The Career agent asked for a job posting, so this message is one whatever its shape
+        # (domain.posting): not the student's question to the hand-off rules, not for the model.
+        awaiting_posting = state.get("pending_field") == "posting" and state.get("route") in by_name
+        if hit := escalate(text, awaiting_posting):
             get_client().update_current_span(metadata={"escalation": hit.kind})
             return {
                 "intent": None,
@@ -56,6 +60,11 @@ def build_graph(
                 "handoff": hit.reply,
             }
         earlier, previous = state["messages"][:-1], state.get("intent")
+        if awaiting_posting:
+            # Only a sure pattern (another request, word for word) changes the topic here.
+            sure = regex_route(text)
+            if sure is None or sure.intent == previous:
+                return {"prompt_version": None}
         # Mid-scaffold the message is usually the answer to the agent's question; the model
         # (seeing that question in the conversation) or a sure pattern decides whether the
         # student changed topic instead.
@@ -90,7 +99,10 @@ def build_graph(
                 state.get("profile") or {},
                 # Only a new request can be a follow-up. A first message has nothing to read it
                 # against, and an answer to the agent's question leaves the next field to ask.
-                (lambda fields: fill(fields, text, earlier)) if earlier and not pending else None,
+                # A job posting is never read by the model (domain.posting).
+                (lambda fields: fill(fields, text, earlier))
+                if earlier and not pending and not is_posting(text)
+                else None,
             )
             # Logging contract (CLAUDE.md rule 11): one VerifierRun per verifier call.
             model = get_settings().llm_default_model

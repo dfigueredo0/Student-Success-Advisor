@@ -19,11 +19,12 @@ class TranscriptRejected(ValueError):
     """The upload is not a readable PDF transcript; the message is safe to show the student."""
 
 
-def pdf_text(content: bytes) -> str:
+def pdf_text(content: bytes, what: str = "transcript") -> str:
+    """`what` names the document in the messages; parse_resume reads PDFs through this too."""
     if len(content) > MAX_BYTES:
-        raise TranscriptRejected("That file is too large for a transcript (5 MB max).")
+        raise TranscriptRejected(f"That file is too large for a {what} (5 MB max).")
     if not content.startswith(b"%PDF-"):
-        raise TranscriptRejected("Please upload your unofficial transcript as a PDF.")
+        raise TranscriptRejected(f"Please upload your {what} as a PDF.")
     try:
         reader = PdfReader(io.BytesIO(content))
         return "\n".join(page.extract_text() or "" for page in reader.pages)

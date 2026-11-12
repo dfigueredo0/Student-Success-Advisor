@@ -38,12 +38,12 @@ class TranscriptResponse(BaseModel):
     courses: list[CourseRow]
 
 
-async def _read_capped(request: Request) -> bytes:
+async def read_capped(request: Request, what: str = "transcript") -> bytes:
     body = bytearray()
     async for chunk in request.stream():
         body += chunk
         if len(body) > MAX_BYTES:
-            raise HTTPException(413, "That file is too large for a transcript (5 MB max).")
+            raise HTTPException(413, f"That file is too large for a {what} (5 MB max).")
     return bytes(body)
 
 
@@ -69,7 +69,7 @@ async def upload_transcript(
     thread_id: str | None = Header(default=None, alias="X-Thread-Id", max_length=64),
 ) -> TranscriptResponse:
     thread_id = thread_id or uuid.uuid4().hex
-    content = await _read_capped(request)
+    content = await read_capped(request)
     langfuse = get_client()
     # The span records sizes and counts only: transcript contents never go into a trace.
     with (

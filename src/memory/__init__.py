@@ -9,7 +9,10 @@ sending the whole thread to a small model.
 
 import re
 
+from domain.posting import PLACEHOLDER, asks_for_posting, is_posting
 from domain.student_text import hide_record
+from domain.web_results import HEADER as WEB_RESULTS
+from domain.web_results import PLACEHOLDER as WEB_PLACEHOLDER
 
 RECENT = 4  # messages: the last two exchanges
 EARLIER = 2  # older messages brought back by in-chat search
@@ -52,8 +55,25 @@ def search(history: list[dict[str, str]], text: str, k: int = EARLIER) -> list[d
     return [history[i] for _, i in sorted(hits, key=lambda s: s[1])]
 
 
+def _own_words(message: dict[str, str], before: dict[str, str] | None) -> dict[str, str]:
+    """`message`, or a placeholder for it when its text is someone else's. `before`: the
+    message it follows."""
+    if message["role"] == "user":
+        asked = (
+            before is not None and before["role"] != "user" and asks_for_posting(before["content"])
+        )
+        hidden = PLACEHOLDER if asked or is_posting(message["content"]) else None
+    else:
+        hidden = WEB_PLACEHOLDER if message["content"].startswith(WEB_RESULTS) else None
+    return {**message, "content": hidden} if hidden else message
+
+
 def context(history: list[dict[str, str]], text: str) -> str:
     """The prompt's view of the conversation before `text`: search hits, then recent messages."""
+    # Third-party text never comes back to the model as history: a posting the student shared
+    # (recognized by its shape or because the advisor had asked for it, so the gateway's
+    # injection check never saw it), and a reply that lists web search results.
+    history = [_own_words(m, before) for before, m in zip([None, *history], history, strict=False)]
     recent, older = history[-RECENT:], history[:-RECENT]
     lines = [_line(m) for m in recent]
     if earlier := search(older, text):

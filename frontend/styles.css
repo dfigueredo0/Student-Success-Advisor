@@ -505,6 +505,8 @@ header .logo {
 }
 
 .msg {
+    white-space: pre-wrap; /* answers indent sub-lines ("   - You have: ...") */
+    overflow-wrap: anywhere; /* long links */
     max-width: 88%;
     padding: 8px 11px;
     font-size: 12px;

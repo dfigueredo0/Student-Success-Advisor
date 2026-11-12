@@ -1,0 +1,21 @@
+Test Q Student
+test.student@hawk.iit.edu | (312) 555-0142 | linkedin.com/in/teststudent | github.com/teststudent
+Chicago, IL
+
+EDUCATION
+Illinois Institute of Technology, Chicago, IL
+Bachelor of Science in Computer Science                      Expected May 2027
+GPA: 3.6/4.0
+
+SKILLS
+Languages: Python, Java, C++, SQL, JavaScript, R
+Tools: Git, Docker, Linux, AWS, React, Excel
+
+EXPERIENCE
+Software Engineering Intern, Examplecorp Systems              June 2026 - August 2026
+- Built REST APIs in Spring Boot and deployed them with Kubernetes
+- Wrote unit tests with JUnit; tracked work in Jira
+
+PROJECTS
+Course Planner (Capstone Project)                              2025
+- Django and PostgreSQL web app for planning course schedules

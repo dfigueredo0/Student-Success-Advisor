@@ -29,6 +29,11 @@ class Settings(BaseSettings):
     litellm_career_key: SecretStr = SecretStr("sk-ssa-career-dev")
     llm_default_model: str = "local-llm"
 
+    # Web search for current job openings (tools.career.web_search; https://tavily.com). The
+    # one outside service the app calls that is not a model. Unset: the Career agent says web
+    # search isn't set up.
+    tavily_api_key: SecretStr | None = None
+
     # Router: small model for stage 2, and the confidence below which it asks to clarify
     ollama_model: str = "qwen3:14b"
     router_confidence_threshold: float = 0.6

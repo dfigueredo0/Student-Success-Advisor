@@ -1,6 +1,10 @@
+from pathlib import Path
+
 import pytest
 
 from orchestrator.escalation import escalate
+
+POSTING = (Path(__file__).parents[1] / "fixtures" / "posting" / "synthetic.txt").read_text()
 
 # (message, the kind of hand-off it must trigger). From the Activity 4 test table.
 HAND_OFFS = [
@@ -106,3 +110,47 @@ def test_visa_questions_name_the_office_of_global_services() -> None:
     for message in ["If I drop to 9 credits will I lose my F-1 status?", "Should I withdraw?"]:
         reply = escalate(message).reply
         assert "Office of Global Services" in reply and "International Center" not in reply
+
+
+def test_job_posting_is_not_handed_off_for_its_boilerplate() -> None:
+    """A pasted posting says "visa sponsorship", "legally authorized", "tuition reimbursement";
+    none of those is the student asking about their visa, the law or their bill."""
+    assert "visa sponsorship" in POSTING and "tuition" in POSTING and "legally" in POSTING
+    assert escalate(POSTING) is None
+
+
+def test_crisis_inside_a_posting_still_hands_off() -> None:
+    assert escalate(POSTING + " Honestly I don't want to be here anymore.").kind == "crisis"
+    assert escalate(POSTING + " I'm so overwhelmed and anxious.").kind == "distress"
+
+
+SHORT_POSTING = "Requirements: Python, SQL, 2+ years of experience. No visa sponsorship."
+
+
+def test_text_the_advisor_asked_for_as_a_posting_is_not_the_students_question() -> None:
+    """ "Paste the posting's requirements section here": the reply is too short to look like a
+    posting, and is one all the same."""
+    assert escalate(SHORT_POSTING).kind == "financial"  # unasked, it reads as a question
+    assert escalate(SHORT_POSTING, awaiting_posting=True) is None
+    crisis = escalate(SHORT_POSTING + " I want to end it", awaiting_posting=True)
+    assert crisis is not None and crisis.kind == "crisis"
+
+
+@pytest.mark.parametrize(
+    "role",
+    ["Loan Officers", "Paralegals and Legal Assistants", "Bill and Account Collectors",
+     "Substitute Teachers, Short-Term"],
+)  # fmt: skip
+def test_the_search_prompt_the_advisor_suggests_is_not_handed_off_for_a_role_name(
+    role: str,
+) -> None:
+    assert escalate(f"Find openings for {role}") is None
+    crisis = escalate(f"Find openings for {role}. I don't want to be here anymore")
+    assert crisis is not None and crisis.kind == "crisis"
+
+
+def test_words_inside_a_link_are_not_the_students_question() -> None:
+    assert escalate("Am I a fit for this? https://jobs.visa.com/legal-intern/123") is None
+    # ...but the student's own words next to the link still are
+    asked = escalate("Will this job sponsor my visa? https://jobs.lever.co/acme/123")
+    assert asked is not None and asked.kind == "financial"

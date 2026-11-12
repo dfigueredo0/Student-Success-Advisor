@@ -58,7 +58,10 @@ HELP = (
     '- look up a course\'s description, sections and instructors ("Tell me about CS 331")\n'
     '- find courses on a topic ("Any courses on machine learning?")\n'
     '- show what dropping a course would affect ("What happens if I drop CS 351?")\n'
-    '- match courses to career skills ("What skills do I need to become a data scientist?")\n\n'
+    '- match courses to career skills ("What skills do I need to become a data scientist?")\n'
+    '- match jobs to your skills or resume ("What jobs fit my resume?")\n'
+    "- compare your skills with a job posting (paste the posting or its link)\n"
+    '- search the web for current openings ("Find openings for data analyst")\n\n'
     "Tell me what you've completed (e.g. \"I've taken CS 115 and MATH 151\") and I'll "
     "remember it for this conversation."
 )
@@ -581,7 +584,8 @@ def _known_record(profile: dict[str, Any]) -> str | None:
     if major := profile.get("major"):
         lines.append(f"- Major: {major}")
     lines.append(
-        "I only keep your courses, grades and major, and only for this conversation. "
+        "I only keep your courses, grades and major (plus the skills, degree level and "
+        "graduation year from a resume, if you upload one), and only for this conversation. "
         "If something's missing, tell me (e.g. \"I've taken CS 351\")."
     )
     return "\n".join(lines)

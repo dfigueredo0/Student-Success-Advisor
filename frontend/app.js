@@ -542,6 +542,15 @@ async function sendMessage() {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
     if (!text) return;
+    // The API takes 4,000 characters; a pasted job posting is the usual way to exceed it.
+    if (text.length > 4000) {
+        appendMessage(
+            `That message is ${text.length} characters and I can read 4,000. If it's a job ` +
+            "posting, paste just its requirements section, or send the posting's link.",
+            'system'
+        );
+        return;
+    }
 
     appendMessage(text, 'user');
     input.value = '';
@@ -555,17 +564,45 @@ async function sendMessage() {
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
         const data = await res.json();
         chatThreadId = data.thread_id;
-        appendMessage(data.answer, 'system');
+        appendMessage(data.answer, 'system', data.citations);
     } catch (err) {
         appendMessage(`Advisor unavailable: ${err.message}`, 'system');
     }
 }
 
-function appendMessage(text, sender) {
+function linkTo(url, label) {
+    const a = document.createElement('a');
+    a.href = url;
+    a.textContent = label;
+    a.target = '_blank';
+    a.rel = 'noopener noreferrer';
+    return a;
+}
+
+// Answers can carry text from other websites (job search results), so a message is built
+// from text nodes and links only, never from HTML. A source line ("[2] ...") links to its
+// citation's URL; a plain http(s) address in the text links to itself.
+function appendMessage(text, sender, citations = []) {
     const chatLog = document.getElementById('chat-log');
     const msg = document.createElement('div');
     msg.className = `msg msg-${sender}`;
-    msg.innerText = text;
+    text.split('\n').forEach((line, i) => {
+        if (i) msg.appendChild(document.createElement('br'));
+        const source = /^\[(\d+)\] /.exec(line);
+        const cited = source && citations[source[1] - 1];
+        if (cited && /^https?:\/\//i.test(cited.url || '')) {
+            msg.appendChild(linkTo(cited.url, line));
+            return;
+        }
+        let shown = 0;
+        for (const found of line.matchAll(/https?:\/\/[^\s<>"']+/g)) {
+            const url = found[0].replace(/[.,;:!?)]+$/, '');  // not the sentence's punctuation
+            msg.appendChild(document.createTextNode(line.slice(shown, found.index)));
+            msg.appendChild(linkTo(url, url));
+            shown = found.index + url.length;
+        }
+        msg.appendChild(document.createTextNode(line.slice(shown)));
+    });
     chatLog.appendChild(msg);
     chatLog.scrollTop = chatLog.scrollHeight;
 }
@@ -614,6 +651,31 @@ async function loadChat(input) {
         );
     } catch (err) {
         appendMessage(`Couldn't load that file: ${err.message}`, 'system');
+    }
+}
+
+async function uploadResume(input) {
+    const file = input.files[0];
+    input.value = '';
+    if (!file) return;
+    try {
+        const headers = { 'Content-Type': 'application/pdf' };
+        // Same conversation as the chat, so the advisor keeps the transcript's courses too.
+        if (chatThreadId) headers['X-Thread-Id'] = chatThreadId;
+        const res = await fetch('/resume', { method: 'POST', headers, body: file });
+        if (!res.ok) throw new Error(await readError(res));
+        const data = await res.json();
+        chatThreadId = data.thread_id;
+        appendMessage(
+            `I read ${data.skills.length} skills from your resume: ${data.skills.join(', ')}. ` +
+            'I keep only those, your degree level and your graduation year. ' +
+            'Ask "What jobs fit my resume?" to see roles they line up with.',
+            'system'
+        );
+        // The advisor was waiting for a skill list; this continues that request.
+        if (data.answers_question) sendQuickMessage('Use my resume');
+    } catch (err) {
+        appendMessage(`Couldn't read that resume: ${err.message}`, 'system');
     }
 }
 

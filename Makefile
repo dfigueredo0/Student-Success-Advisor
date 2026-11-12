@@ -7,7 +7,7 @@ COMPOSE        = docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-agent test-integration \
-        test-eval test-e2e lint fmt ci ingest-catalog api api-debug harness keys
+        test-eval test-e2e lint fmt ci ingest-catalog ingest-onet api api-debug harness keys
 
 help: 
 	@uv run python -c "import re; [print(f'  {m[0]:<18} {m[1]}') for m in re.findall(r'^([a-z.-]+):.*?## (.*)$$', open('Makefile').read(), re.M)]"
@@ -71,6 +71,9 @@ harness:  ## Streamlit debug page for the chat API
 ingest-catalog:  ## Scrape the IIT Banner catalog + schedule and load it into pgvector (weekly cron)
 	uv run --group ingest python pipelines/ingest/illinoistech_banner_scraper.py
 	uv run python pipelines/ingest/load_catalog.py
+
+ingest-onet:  ## Load O*NET occupations and software skills (data/onet) for the Career agent
+	uv run python pipelines/ingest/load_onet.py
 
 lint:
 	uv run ruff check .

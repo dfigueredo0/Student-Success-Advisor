@@ -93,7 +93,19 @@
                     <a href="https://www.iit.edu/registrar" target="_blank" class="nav-item external-link">
                         Academic Calendar ↗
                     </a>
+                    <a href="https://iit.joinhandshake.com" target="_blank" rel="noopener noreferrer" class="nav-item external-link">
+                        Handshake (jobs) ↗
+                    </a>
                 </div>
+
+                <!-- Required credit: job matching shows O*NET data (CC BY 4.0). -->
+                <p style="font-size: 10px; color: var(--text-muted); padding: 8px 12px; line-height: 1.4;">
+                    Job matching includes information from the
+                    <a href="https://www.onetcenter.org/database.html" target="_blank" rel="noopener noreferrer">O*NET 31.0 Database</a>
+                    by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA).
+                    Used under the <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noopener noreferrer">CC BY 4.0</a>
+                    license. O*NET&reg; is a trademark of USDOL/ETA.
+                </p>
             </nav>
 
             <!-- CENTER MAIN CONTENT AREA -->
@@ -206,12 +218,15 @@
                         <button class="btn-secondary" onclick="saveChat()" title="Download conversation file">Save chat</button>
                         <button class="btn-secondary" onclick="document.getElementById('chat-file-input').click()" title="Load chat file">Load chat</button>
                         <input type="file" id="chat-file-input" accept=".json,application/json" hidden onchange="loadChat(this)">
+                        <button class="btn-secondary" onclick="document.getElementById('resume-file-input').click()" title="Upload your resume (PDF) for career advice">Upload resume</button>
+                        <input type="file" id="resume-file-input" accept=".pdf,application/pdf" hidden onchange="uploadResume(this)">
                     </span>
                 </div>
 
                 <div class="chat-prompts">
                     <button onclick="sendQuickMessage('What should I take next semester?')">What should I take next?</button>
                     <button onclick="sendQuickMessage('Check my graduation requirements')">Check graduation status</button>
+                    <button onclick="sendQuickMessage('What jobs fit my resume?')">What jobs fit my resume?</button>
                 </div>
 
                 <div class="chat-log" id="chat-log">

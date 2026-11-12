@@ -2,7 +2,8 @@
 
 There are no accounts and no memory export in the early pilot, so a conversation only
 matters while the student is using it. Old ones are deleted, including the courses,
-grades and major a transcript upload put into them.
+grades and major a transcript upload put into them and the skills, degree level and
+graduation year a resume upload did.
 """
 
 from datetime import UTC, datetime, timedelta

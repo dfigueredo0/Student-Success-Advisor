@@ -8,6 +8,9 @@ first hit wins, so the most urgent and the most specific rules come first.
 import re
 from dataclasses import dataclass
 
+from domain.posting import URL, looks_like_posting
+from domain.web_results import FIND_OPENINGS
+
 
 @dataclass(frozen=True)
 class Escalation:
@@ -132,10 +135,23 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
 ]
 
 
-def escalate(text: str) -> Escalation | None:
-    """The hand-off for this message, or None to let the router handle it."""
+# Checked on every message, whole: nothing a message contains may hide these.
+_URGENT = frozenset({"crisis", "distress"})
+
+
+def escalate(text: str, awaiting_posting: bool = False) -> Escalation | None:
+    """The hand-off for this message, or None to let the router handle it.
+
+    The other rules listen for the student's own question, so they skip text that is not
+    theirs: a job posting ("visa sponsorship", "tuition reimbursement", "legally authorized"
+    are its boilerplate), recognized by its shape or because the advisor just asked for one
+    (`awaiting_posting`); the role name in the search request the advisor suggests ("Find
+    openings for Loan Officers"); and the words inside a link ("jobs.visa.com").
+    """
     text = text.replace("\u2019", "'")  # phones type a curly apostrophe (U+2019)
+    theirs = not (awaiting_posting or looks_like_posting(text) or FIND_OPENINGS.match(text))
+    own = URL.sub(" ", text) if theirs else ""
     for kind, pattern, reply in _RULES:
-        if pattern.search(text):
+        if pattern.search(text if kind in _URGENT else own):
             return Escalation(kind, reply)
     return None

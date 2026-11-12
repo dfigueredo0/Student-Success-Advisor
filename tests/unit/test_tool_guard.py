@@ -23,6 +23,9 @@ def test_tool_outside_the_allow_list_is_refused() -> None:
         {"course": "IPRO 497", "in_progress_courses": [], "term": "Fall 2026"},
         {"query": "machine learning", "subject": "CS", "limit": 6},
         {"grades": {"CS 115": "A", "MATH 151": "TR"}},
+        {"current_skills": ["Python", "SQL"], "desired_skills": [], "graduation_year": 2027},
+        {"posting": "x" * 4000},
+        {"role": "r" * 120},
     ],
 )
 def test_ordinary_arguments_pass(args: dict[str, Any]) -> None:
@@ -40,6 +43,14 @@ def test_ordinary_arguments_pass(args: dict[str, Any]) -> None:
         {"grades": {"CS 115": "A", "bad key": "A"}},
         {"grades": {f"CS {n}": "A" for n in range(100, 251)}},
         {"query": "x" * 501},
+        {"current_skills": ["Python"] * 401},
+        {"current_skills": ["x" * 101]},
+        {"desired_skills": [42]},
+        {"current_skills": "Python, SQL"},
+        {"posting": "x" * 4001},
+        {"posting": ["Responsibilities"]},
+        {"role": "r" * 121},
+        {"role": ["analyst"]},
     ],
 )
 def test_arguments_outside_the_limits_never_reach_the_tool(args: dict[str, Any]) -> None:

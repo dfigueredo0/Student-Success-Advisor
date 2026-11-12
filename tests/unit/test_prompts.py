@@ -8,7 +8,7 @@ from agents.prompts import load_prompt
 
 def test_router_prompt_is_versioned_and_renders() -> None:
     p = load_prompt("router_intent")
-    assert p.version == "router_intent@4"
+    assert p.version == "router_intent@7"
     text = p.render(
         intents="- a: b", examples="Message: x\nIntent: a", history="(none)", message="hi"
     )

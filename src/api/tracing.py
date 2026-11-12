@@ -5,8 +5,9 @@ that conversation. Langfuse groups traces by session, so traces carry a one-way 
 the ID instead of the ID itself.
 
 Traces must not hold a student's record either. Every span records its inputs and outputs,
-and the graph's state carries grades and major, so mask_trace runs on everything the Langfuse
-client sends. The message text stays, so the wording of an attack can still be read.
+and the graph's state carries grades, major and the skills read from a resume, so mask_trace
+runs on everything the Langfuse client sends. The message text stays, so the wording of an
+attack can still be read.
 """
 
 import hashlib
@@ -15,8 +16,14 @@ from typing import Any
 from domain.student_text import hide_record
 
 _RECORD_KEYS = frozenset(
-    {"profile", "grades", "major", "gpa", "courses", "completed_courses", "in_progress_courses"}
-)
+    {
+        "profile", "grades", "major", "gpa", "courses", "completed_courses", "in_progress_courses",
+        # from a resume upload (POST /resume)
+        "current_skills", "degree_level", "graduation_year",
+        # the student's skills as a career tool's result lists them (per role, per posting)
+        "matched",
+    }
+)  # fmt: skip
 
 
 def trace_session_id(thread_id: str) -> str:

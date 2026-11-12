@@ -11,6 +11,8 @@ from typing import Any
 import httpx
 
 from agents.prompts import load_prompt
+from domain.posting import is_posting
+from domain.web_results import FIND_OPENINGS
 from memory import context
 from settings import get_settings
 
@@ -27,6 +29,9 @@ INTENTS: dict[str, str] = {
     "drop_course": "college_advisor",
     "help": "college_advisor",
     "career_advice": "career_advisor",
+    "job_match": "career_advisor",
+    "posting_fit": "career_advisor",
+    "find_openings": "career_advisor",
 }
 
 # What the small model sees; keep each line short and contrastive.
@@ -45,7 +50,12 @@ INTENT_DESCRIPTIONS: dict[str, str] = {
     "you have on record",
     "drop_course": "asks what happens if they drop or withdraw from a course they are taking",
     "help": "greets you or asks what you can do",
-    "career_advice": "asks about careers, jobs or internships, or which skills to build for one",
+    "career_advice": "asks which skills or courses to build for a career they name, or how to "
+    "prepare for one",
+    "job_match": "asks which jobs, internships or occupations fit the skills, degree or resume "
+    "they already have",
+    "posting_fit": "wants their skills compared with one job posting they share",
+    "find_openings": "asks you to search the web for current job or internship openings in a role",
 }
 
 _FEW_SHOT: list[tuple[str, str]] = [
@@ -58,6 +68,9 @@ _FEW_SHOT: list[tuple[str, str]] = [
     ("Should I drop CS 430 this semester?", "drop_course"),
     ("hey, what can you do?", "help"),
     ("What skills do I need to become a data scientist?", "career_advice"),
+    ("Which internships fit the skills I have?", "job_match"),
+    ("Can you compare my skills with a job posting?", "posting_fit"),
+    ("Search for data analyst internships that are open now", "find_openings"),
     ("and for SQL?", "follow_up"),
     ("what about CS 485?", "follow_up"),
     ("can I take the first one?", "check_eligibility"),
@@ -123,6 +136,18 @@ _SURE: list[tuple[re.Pattern[str], str, bool]] = [
     ),
     (
         re.compile(
+            rf"^\s*(what|which) (jobs|roles|internships) (fit|match) my (resume|skills){_END}", re.I
+        ),
+        "job_match",
+        True,
+    ),
+    # The wording the job-match answer suggests; the role is whatever follows.
+    (FIND_OPENINGS, "find_openings", True),
+    # The page sends this when a resume upload answered "Which skills do you already have?";
+    # weak, so it continues whichever request asked.
+    (re.compile(rf"^\s*use my resume{_END}", re.I), "job_match", False),
+    (
+        re.compile(
             r"^(?=.*\w)\s*((hi+|hello+|hey+|hiya|howdy|yo|good (morning|afternoon|evening))"
             r"(\s+there)?[\s!.,)]*)?(help|what can you do( for me)?|who are you)?[\s!.?,)]*$",
             re.I,
@@ -140,6 +165,9 @@ CLARIFY_QUESTION = (
     '- find courses on a topic ("Any courses on machine learning?")\n'
     '- show what dropping a course would affect ("What happens if I drop CS 351?")\n'
     '- match courses to career skills ("What skills do I need to become a data scientist?")\n'
+    '- match jobs to your skills or resume ("What jobs fit my resume?")\n'
+    "- compare your skills with a job posting (paste the posting or its link)\n"
+    '- search the web for current openings ("Find openings for data analyst")\n'
     "What would you like to do?"
 )
 
@@ -239,6 +267,10 @@ def ollama_classify(
 def regex_route(text: str, answering: str | None = None) -> Route | None:
     """The route of the sure pattern the whole message matches, or None to ask the model.
     `answering`: the intent whose question the agent is waiting on; a weak hit answers it."""
+    # A link or pasted posting is recognized by shape and never goes to the model: it is
+    # third-party text nobody checked for injection (domain.posting).
+    if is_posting(text):
+        return Route("posting_fit", INTENTS["posting_fit"], 1.0, "regex")
     for pattern, intent, strong in _SURE:
         if pattern.match(text):
             intent = intent if strong or answering is None else answering

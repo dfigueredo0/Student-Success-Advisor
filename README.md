@@ -63,6 +63,35 @@ uv run python pipelines/ingest/load_catalog.py
 
 Snapshots land in `data/raw/banner/` (gitignored). The loader is safe to rerun.
 
+### Load job data (first time)
+
+The Career agent reads resumes and matches jobs with O*NET occupation data. Until it is
+loaded, resume uploads and "What jobs fit my resume?" say the job data isn't there:
+
+```bash
+make ingest-onet      # data/onet/*.csv -> Postgres; a few seconds, safe to rerun
+```
+
+This product includes information from the [O*NET 31.0 Database](https://www.onetcenter.org/database.html)
+by the U.S. Department of Labor, Employment and Training Administration (USDOL/ETA), used under
+the [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) license. O*NET® is a trademark of
+USDOL/ETA. See `data/onet/README.md` to refresh it for a new release.
+
+### Web search for current openings (optional)
+
+O*NET says which roles fit a student; it has no openings. "Find openings for data analyst"
+runs one web search through [Tavily](https://tavily.com) and lists up to five results from the
+past month, each linked to its source. Get a free key (1,000 searches a month, no card) and
+put it in `.env`:
+
+```bash
+TAVILY_API_KEY=tvly-...
+```
+
+Without a key the advisor says web search isn't set up and points to Handshake. Only the role
+and "internship" or "entry level" go into the query; nothing from a resume leaves the app.
+There is no rate limit on searches yet (`src/tools/career/web_search.py`).
+
 ## What's running
 
 All ports are bound to `localhost` only.

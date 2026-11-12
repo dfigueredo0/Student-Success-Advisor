@@ -9,6 +9,10 @@ from langfuse import get_client
 _COURSE = re.compile(r"^[A-Z]{2,4} \d{3}[A-Z]?$")
 MAX_COURSES = 150  # a full degree's worth, retakes included
 MAX_TEXT = 500
+MAX_SKILLS = 400  # every O*NET name a resume could match (331), plus skills typed in chat
+MAX_SKILL = 100  # characters in one skill
+MAX_POSTING = 4000  # api.routes.chat's limit on a message
+MAX_ROLE = 120  # the longest O*NET occupation titles run past 100
 
 
 class ToolNotAllowed(PermissionError):
@@ -32,6 +36,16 @@ def _check_args(args: dict[str, Any]) -> None:
             valid = _is_course(value)
         elif name in ("completed_courses", "in_progress_courses", "grades"):
             valid = len(value) <= MAX_COURSES and all(_is_course(c) for c in value)
+        elif name == "role":  # goes into a web search query (tools.career.web_search)
+            valid = isinstance(value, str) and len(value) <= MAX_ROLE
+        elif name == "posting":  # a pasted job posting: as long as a chat message may be
+            valid = isinstance(value, str) and len(value) <= MAX_POSTING
+        elif name in ("current_skills", "desired_skills"):
+            valid = (
+                isinstance(value, list)
+                and len(value) <= MAX_SKILLS
+                and all(isinstance(s, str) and len(s) <= MAX_SKILL for s in value)
+            )
         else:
             valid = not isinstance(value, str) or len(value) <= MAX_TEXT
         if not valid:

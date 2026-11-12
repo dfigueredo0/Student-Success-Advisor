@@ -25,9 +25,37 @@ def test_mask_hides_student_records_wherever_they_sit() -> None:
     assert node["intent"] == "check_eligibility"  # what we debug with stays
 
 
+def test_mask_hides_what_a_resume_upload_added() -> None:
+    args = {
+        "current_skills": ["Python", "SQL"],
+        "degree_level": "bachelor",
+        "graduation_year": 2027,
+    }
+    assert mask_trace(data={"name": "match_occupations", "args": args}) == {
+        "name": "match_occupations",
+        "args": {
+            "current_skills": "[2 hidden]",
+            "degree_level": "[hidden]",
+            "graduation_year": "[hidden]",
+        },
+    }
+
+
 def test_mask_cleans_the_transcript_summary_in_text() -> None:
     answer = "- Completed: MATH 151 (transfer), CS 331 (C+)\n- Major: Computer Science\nThanks"
     assert mask_trace(data=answer) == "- Completed: MATH 151, CS 331\nThanks"
+
+
+def test_mask_hides_the_students_skills_in_a_tool_result() -> None:
+    """match_occupations and compare_to_posting answer with the skills the student holds."""
+    role = {"title": "Software Developers", "matched": ["Python", "SQL"], "missing": ["Git"]}
+    masked = mask_trace(data={"output": {"occupations": [role], "matched": ["Python"]}})
+    assert masked["output"] == {
+        "occupations": [
+            {"title": "Software Developers", "matched": "[2 hidden]", "missing": ["Git"]}
+        ],
+        "matched": "[1 hidden]",
+    }
 
 
 def test_mask_leaves_everything_else_alone() -> None:
