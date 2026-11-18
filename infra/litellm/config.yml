@@ -4,9 +4,11 @@
 # real model answers. Swapping models later only means editing this list.
 model_list:
   # Router and slot filling. qwen3:14b won the router bake-off (docs/adr/0001-router-model.md).
+  # The model comes from OLLAMA_MODEL in .env (docker-compose.yml sets LOCAL_LLM_MODEL from it),
+  # so a laptop that can't fit 14b runs a smaller one by changing .env only.
   - model_name: local-llm
     litellm_params:
-      model: ollama_chat/qwen3:14b
+      model: os.environ/LOCAL_LLM_MODEL
       # Inside Docker, containers reach each other by service name, not localhost.
       api_base: http://ollama:11434
 
