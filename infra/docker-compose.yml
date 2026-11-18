@@ -72,6 +72,8 @@ services:
     command: ["--config", "/app/gateway/config.yml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ssa-dev-master-key}
+      # Same model Ollama pulls, so the gateway never asks for one that isn't there.
+      LOCAL_LLM_MODEL: ollama_chat/${OLLAMA_MODEL:-qwen3:14b}
       LITELLM_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/litellm
       PYTHONPATH: /app/shared
       LANGFUSE_HOST: http://langfuse-web:3000
