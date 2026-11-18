@@ -17,3 +17,6 @@ data/raw/banner/
 
 .DS_Store
 .idea/
+
+# Raw catalog pages for the degree-requirements scraper
+data/raw/degree_requirements/
