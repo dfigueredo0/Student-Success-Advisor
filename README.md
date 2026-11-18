@@ -28,16 +28,19 @@ service's healthcheck. **The first run takes several minutes** while Ollama down
 chat and embedding models (it waits up to 15 minutes). Later runs start in under a minute.
 
 Ollama runs on your GPU when Docker can reach one. `make up` prints what it picked, e.g.
-`ollama: amd (AMD GPU (ROCm /dev/kfd))`, and adds `infra/docker-compose.amd.yml` or
-`infra/docker-compose.nvidia.yml` to match:
+`ollama: amd (AMD GPU (ROCm /dev/kfd))`, and adds `infra/docker-compose.amd.yml`,
+`infra/docker-compose.nvidia.yml` or `infra/docker-compose.intel.yml` to match:
 
 - **NVIDIA**: works with Docker Desktop (Windows/WSL). On native Linux, install
   [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
   first, otherwise you get CPU.
 - **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses the `ollama/ollama:rocm` image.
+- **Intel** (Arc, Core Ultra iGPUs): native Linux with Mesa's Vulkan driver (on Arch/CachyOS,
+  `vulkan-intel`; check with `vulkaninfo --summary`). Uses Ollama's Vulkan backend, which is
+  still experimental. Only picked when there is no NVIDIA or AMD card.
 - **macOS**: always CPU (Docker can't give containers the GPU on a Mac).
 
-To choose yourself, run `make up GPU=cpu` (or `amd`, `nvidia`). To check what Ollama is
+To choose yourself, run `make up GPU=cpu` (or `amd`, `nvidia`, `intel`). To check what Ollama is
 using, run `docker compose -f infra/docker-compose.yml logs ollama | grep "inference compute"`.
 
 `.env` is only created once. When `.env.example` gains new lines after a pull, add them to
