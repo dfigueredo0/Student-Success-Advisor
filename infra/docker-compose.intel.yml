@@ -1,0 +1,12 @@
+# Intel GPU override for Ollama (Vulkan). `make up` adds it when infra/gpu.py finds an Intel
+# GPU (PCI vendor 0x8086) on Linux, e.g. Arc B390 in Core Ultra laptops.
+# The base image (ollama/ollama) bundles Vulkan; OLLAMA_VULKAN=1 turns it on, since it is
+# still marked experimental. Ollama runs as root in the container, so no group_add is needed.
+# Check it took: `make logs` should show a Vulkan device under "inference compute", not "cpu".
+
+services:
+  ollama:
+    devices:
+      - /dev/dri
+    environment:
+      OLLAMA_VULKAN: "1"
