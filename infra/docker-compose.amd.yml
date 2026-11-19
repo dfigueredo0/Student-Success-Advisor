@@ -4,7 +4,8 @@
 
 services:
   ollama:
-    image: ollama/ollama:rocm
+    # Same release as the base file's image, ROCm build (amd64 only). Update the two together.
+    image: ollama/ollama:0.40.16-rocm@sha256:85b3c895222b1ddc9d63c40b20fc74f37a37593dcbbdfbf28910a925e43ead00
     devices:
       - /dev/kfd
       - /dev/dri

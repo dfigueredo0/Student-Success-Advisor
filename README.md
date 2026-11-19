@@ -34,7 +34,7 @@ Ollama runs on your GPU when Docker can reach one. `make up` prints what it pick
 - **NVIDIA**: works with Docker Desktop (Windows/WSL). On native Linux, install
   [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
   first, otherwise you get CPU.
-- **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses the `ollama/ollama:rocm` image.
+- **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses Ollama's ROCm image (same pinned release as the default one).
 - **Intel** (Arc, Core Ultra iGPUs): native Linux with Mesa's Vulkan driver (on Arch/CachyOS,
   `vulkan-intel`; check with `vulkaninfo --summary`). Uses Ollama's Vulkan backend, which is
   still experimental. Only picked when there is no NVIDIA or AMD card.
