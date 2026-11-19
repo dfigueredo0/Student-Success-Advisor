@@ -40,6 +40,7 @@ new-secrets:  ## Replace every password and key in .env (keeps your other settin
 	@echo "New secrets are in .env. Langfuse login: dev@ssa.local + LANGFUSE_INIT_USER_PASSWORD"
 
 up: .env 
+	uv run --no-project python infra/make_env.py --add-missing
 	$(COMPOSE) up -d --wait --wait-timeout 900
 	$(MAKE) migrate
 	$(MAKE) keys
