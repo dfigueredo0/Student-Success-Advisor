@@ -1,6 +1,7 @@
 import pytest
 
-from orchestrator.escalation import escalate
+from domain.redaction import redact
+from orchestrator.escalation import _RULES, escalate
 
 # (message, the kind of hand-off it must trigger). From the Activity 4 test table.
 HAND_OFFS = [
@@ -106,3 +107,22 @@ def test_visa_questions_name_the_office_of_global_services() -> None:
     for message in ["If I drop to 9 credits will I lose my F-1 status?", "Should I withdraw?"]:
         reply = escalate(message).reply
         assert "Office of Global Services" in reply and "International Center" not in reply
+
+
+def test_crisis_reply_gives_campus_emergency_and_support_lines() -> None:
+    reply = escalate("I want to end it all").reply
+    assert reply.index("988") < reply.index("911") < reply.index("312.808.6363")
+    assert "866.349.5575" in reply
+
+
+def test_standing_goes_to_academic_affairs_not_dean_of_students() -> None:
+    for text in ("I'm on academic probation", "how do I appeal my dismissal"):
+        reply = escalate(text).reply
+        assert "Undergraduate Academic Affairs" in reply and "Dean of Students" not in reply
+
+
+def test_every_reply_survives_the_personal_data_filter() -> None:
+    """The merge step runs redact() on every reply; a contact it removed would show the
+    student "[removed]" instead of a phone number."""
+    for _, _, reply in _RULES:
+        assert redact(reply) == reply

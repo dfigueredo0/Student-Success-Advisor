@@ -18,6 +18,7 @@ REMOVED = [
     ("Call me at 773-555-0142", "555-0142"),
     ("Call me at (773) 555 0142", "555 0142"),
     ("Call me at +1 773.555.0142", "555.0142"),
+    ("Call me at 312.808.6364", "808.6364"),  # one digit off an official number
     ("Birth Date 01/01/2000", "01/01/2000"),
     ("date of birth: 1-1-2000", "1-1-2000"),
 ]
@@ -35,6 +36,9 @@ KEPT = [
     "Completed: MATH 151 (transfer), CS 115 (A), CS 331 (C+)",
     "Your GPA on the transcript is 3.27.",
     "Classes start 08/24/2026.",
+    "On campus, also call Public Safety at 312.808.6363.",
+    "The 24/7 student support line is 866.349.5575.",
+    "Student Accounting: bursar@illinoistech.edu",
 ]
 
 
