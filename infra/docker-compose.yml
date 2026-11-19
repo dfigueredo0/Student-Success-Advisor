@@ -2,6 +2,9 @@ name: ssa
 
 # Every password and key comes from .env, which `make up` fills with random values
 # (infra/make_env.py). There are no fallbacks: without .env, compose stops and says which is missing.
+#
+# Every image is pinned by digest (tests/unit/test_image_pins.py): the tag names the release, the
+# digest makes sure it is that exact image. To update one, change both together and run the tests.
 
 x-langfuse-env: &langfuse-env
   DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/langfuse
@@ -33,7 +36,7 @@ x-langfuse-env: &langfuse-env
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.6-pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
@@ -108,7 +111,7 @@ services:
       start_period: 30s
 
   clickhouse:
-    image: clickhouse/clickhouse-server:25.3
+    image: clickhouse/clickhouse-server:25.3.14.14@sha256:b627d7a9bc0e0c1bac26cdbe9d2fc6316faa29c5d8a174f28f5abd57d0fa6ba2
     restart: unless-stopped
     user: "101:101"
     environment:
@@ -126,7 +129,7 @@ services:
       start_period: 5s
 
   redis:
-    image: redis:7
+    image: redis:7.4.11@sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b
     restart: unless-stopped
     command: ["--requirepass", "${REDIS_PASSWORD:?missing from .env - run make new-secrets}", "--maxmemory-policy", "noeviction"]
     healthcheck:
@@ -136,7 +139,10 @@ services:
       retries: 20
 
   minio:
-    image: cgr.dev/chainguard/minio
+    # MinIO no longer publishes official images; Chainguard's free build only has `latest`,
+    # so this is pinned by digest alone (Nov 19, 2026). Old digests may be removed: if a pull
+    # fails, take the current one from `docker buildx imagetools inspect cgr.dev/chainguard/minio`.
+    image: cgr.dev/chainguard/minio@sha256:16b824a0016ffad3dfa8b059755f83800aa42ca68fe86f1782cabd0c5a16d322
     restart: unless-stopped
     entrypoint: ["sh", "-c", "mkdir -p /data/langfuse && minio server --address ':9000' --console-address ':9001' /data"]
     environment:
@@ -152,7 +158,8 @@ services:
       start_period: 5s
 
   langfuse-worker:
-    image: langfuse/langfuse-worker:3
+    # Keep both Langfuse images on the same release.
+    image: langfuse/langfuse-worker:3.225.11@sha256:8a28c946bb5401eef488153fa294db5a79bd99dd5c90db8e4d39559374c9ebd3
     restart: unless-stopped
     environment:
       <<: *langfuse-env
@@ -174,7 +181,7 @@ services:
       start_period: 20s
 
   langfuse-web:
-    image: langfuse/langfuse:3
+    image: langfuse/langfuse:3.225.11@sha256:a343f64e035eb01aeea358703a0428945d909d01e19452509a5a830862dda878
     restart: unless-stopped
     environment:
       <<: *langfuse-env

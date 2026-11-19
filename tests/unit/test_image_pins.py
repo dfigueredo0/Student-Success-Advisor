@@ -27,3 +27,24 @@ def test_amd_override_uses_the_same_release() -> None:
     assert base and amd
     assert base.group(1) == amd.group(1)
     assert amd.group(2) == "-rocm"
+
+
+DIGEST = re.compile(r"@sha256:[0-9a-f]{64}$")
+
+
+def test_every_image_in_every_compose_file_is_pinned_by_digest() -> None:
+    images = [
+        (f.name, line.split("image:", 1)[1].strip())
+        for f in sorted(INFRA.glob("docker-compose*.yml"))
+        for line in f.read_text().splitlines()
+        if line.strip().startswith("image:")
+    ]
+    assert len(images) >= 9
+    unpinned = [f"{name}: {ref}" for name, ref in images if not DIGEST.search(ref)]
+    assert not unpinned, unpinned
+
+
+def test_langfuse_web_and_worker_run_the_same_release() -> None:
+    text = (INFRA / "docker-compose.yml").read_text()
+    versions = set(re.findall(r"image:\s*langfuse/langfuse(?:-worker)?:([\d.]+)@", text))
+    assert len(versions) == 1, versions
