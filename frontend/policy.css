@@ -74,7 +74,7 @@ body.policy-page {
     padding: 12px 14px;
     background: var(--brand-accent-bg);
     border: 1px solid var(--brand-accent-border);
-    border-radius: 6px;
+    border-radius: 3px;
     text-align: left;
 }
 .privacy-panel strong { display: block; font-size: 13px; margin-bottom: 6px; }
