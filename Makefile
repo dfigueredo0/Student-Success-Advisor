@@ -7,7 +7,7 @@ COMPOSE        = docker compose $(COMPOSE_FILES) --env-file .env
 PYTEST        := uv run pytest
 
 .PHONY: help install up down clean ps logs migrate test test-unit test-agent test-integration \
-        test-eval test-e2e lint fmt ci ingest-catalog ingest-requirements api api-debug harness keys
+        test-eval test-e2e lint fmt ci new-secrets ingest-catalog ingest-requirements api api-debug harness keys
 
 help: 
 	@uv run python -c "import re; [print(f'  {m[0]:<18} {m[1]}') for m in re.findall(r'^([a-z.-]+):.*?## (.*)$$', open('Makefile').read(), re.M)]"
@@ -15,8 +15,29 @@ help:
 install: 
 	uv sync --locked
 
-.env: 
-	uv run python -c "import shutil; shutil.copyfile('.env.example', '.env')"
+.env:  ## Create .env with random passwords and keys (runs on the first `make up`)
+	uv run --no-project python infra/make_env.py
+
+# Postgres sets its password only when its data folder is first created, so a new password is
+# applied with ALTER USER (over the container's local socket, which needs none). The Langfuse
+# and LiteLLM databases and the trace stores are emptied, because their stored keys were made
+# with the old secrets; the ssa database (catalog, conversations) and Ollama's models are kept.
+new-secrets:  ## Replace every password and key in .env (keeps your other settings and course data)
+	@test -f .env || { echo "no .env yet: just run make up"; exit 1; }
+	docker compose -p ssa down
+	mv .env .env.bak
+	uv run --no-project python infra/make_env.py --keep .env.bak
+	$(COMPOSE) up -d --wait postgres
+	PW=$$(sed -n 's/^POSTGRES_PASSWORD=//p' .env); \
+	docker compose -p ssa exec -T postgres psql -U postgres -d ssa -v ON_ERROR_STOP=1 \
+	  -c "ALTER USER postgres PASSWORD '$$PW'" \
+	  -c "DROP DATABASE IF EXISTS langfuse WITH (FORCE)" -c "CREATE DATABASE langfuse" \
+	  -c "DROP DATABASE IF EXISTS litellm WITH (FORCE)" -c "CREATE DATABASE litellm"
+	$(COMPOSE) down
+	docker volume rm -f ssa_clickhouse_data ssa_clickhouse_logs ssa_minio_data
+	$(MAKE) up
+	rm .env.bak
+	@echo "New secrets are in .env. Langfuse login: dev@ssa.local + LANGFUSE_INIT_USER_PASSWORD"
 
 up: .env 
 	$(COMPOSE) up -d --wait --wait-timeout 900
