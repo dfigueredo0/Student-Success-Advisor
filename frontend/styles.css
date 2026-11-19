@@ -35,6 +35,7 @@
 }
 
 body.dark-mode {
+    color-scheme: dark;
     --bg-body: #121212;
     --bg-surface: #1e1e1e;
     --bg-subtle: #252525;
@@ -113,6 +114,19 @@ button.btn-secondary:hover {
     background-color: var(--btn-sec-hover);
 }
 
+button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+button:disabled:hover {
+    background-color: var(--brand-primary);
+}
+
+button.btn-secondary:disabled:hover {
+    background-color: var(--btn-sec-bg);
+}
+
 /* Step 1: Upload Screen */
 #upload-screen {
     flex: 1;
@@ -148,7 +162,7 @@ button.btn-secondary:hover {
 }
 
 .preset-section {
-    margin-top: 20px;
+    margin-top: 12px;
     padding-top: 15px;
     border-top: 1px solid var(--border-subtle);
 }
@@ -183,6 +197,31 @@ button.btn-secondary:hover {
 .preset-card span {
     font-size: 11px;
     color: var(--text-muted);
+}
+
+#upload-status {
+    font-size: 12px;
+    color: #b00020;
+    margin-top: 8px;
+    min-height: 16px;
+}
+
+body.dark-mode #upload-status {
+    color: #ff8a80;
+}
+
+@media (max-width: 480px) {
+    .upload-card {
+        padding: 20px;
+    }
+
+    .upload-card h1 {
+        font-size: 17px;
+    }
+
+    .preset-grid {
+        grid-template-columns: 1fr;
+    }
 }
 
 /* Step 2: Main Workspace */
@@ -238,8 +277,15 @@ header .logo {
     border-right: 1px solid var(--border-color);
     display: flex;
     flex-direction: column;
-    justify-content: space-between;
     padding: 10px 0;
+}
+
+.nav-sidebar .nav-group:first-child {
+    flex: 1;
+}
+
+.nav-sidebar .nav-group + .nav-group {
+    margin-top: 8px;
 }
 
 .nav-header {

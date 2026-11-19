@@ -30,14 +30,28 @@ SENSITIVE_PATTERNS = [
     # US Social Security number.
     re.compile(r"\b\d{3}-\d{2}-\d{4}\b"),
     # US phone numbers, except campus numbers (312-567-xxxx), so office contacts stay.
+    # OFFICIAL_NUMBERS below are kept too.
     re.compile(
         r"(?<!\d)(?:\+?1[\s.-]?)?\(?(?!312\)?[\s.-]?567)\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4}(?!\d)"
     ),
 ]
 
+# Official Illinois Tech numbers outside 312-567 that hand-off replies give students, checked on
+# iit.edu on Nov 19, 2026. Without this the crisis reply would show "[removed]" for them.
+OFFICIAL_NUMBERS = {
+    "3128086363",  # Public Safety, 24/7 emergency line (iit.edu/public-safety)
+    "8663495575",  # Student Assistance Program / Care Hub, 24/7 (iit.edu/shwc)
+}
+
+
+def _phone_or_official(match: re.Match[str]) -> str:
+    digits = re.sub(r"\D", "", match.group())[-10:]
+    return match.group() if digits in OFFICIAL_NUMBERS else REDACTED
+
 
 def redact(text: str) -> str:
     text = _BIRTH_DATE.sub(lambda m: f"{m.group(1)}{m.group(2)}{REDACTED}", text)
-    for pattern in SENSITIVE_PATTERNS:
+    *others, phone = SENSITIVE_PATTERNS
+    for pattern in others:
         text = pattern.sub(REDACTED, text)
-    return text
+    return phone.sub(_phone_or_official, text)

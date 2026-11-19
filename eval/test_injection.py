@@ -19,3 +19,13 @@ def test_pattern_guardrail_does_not_get_worse() -> None:
     assert by_source["written"]["attacks_caught"] >= 13
     blocked = by_source["written"]["false_positives"] + by_source["routing"]["false_positives"]
     assert blocked == ["N25"]
+
+
+def test_pattern_guardrail_never_flags_real_catalog_text() -> None:
+    """Baseline 2026-11-18: 4/15 catalog attacks caught, 0/26 real or tricky normal rules
+    flagged. The six that every detector misses (C05, C07, C08, C09, C12, C15) read like
+    ordinary advising instructions, which is why ADR 0002 relies on how the text is used,
+    not on scanning it."""
+    catalog = run("patterns")["by_source"]["catalog"]
+    assert catalog["attacks_caught"] >= 4
+    assert catalog["false_positives"] == []

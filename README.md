@@ -23,25 +23,32 @@ make up        # start the stack, run migrations, create gateway keys
 make api       # chat API + web UI on http://localhost:8000
 ```
 
-`make up` copies `.env.example` to `.env` if you don't have one, then waits for every
-service's healthcheck. **The first run takes several minutes** while Ollama downloads the
+`make up` creates `.env` from `.env.example` if you don't have one, with a random value for
+every password and key (`infra/make_env.py`), then waits for every service's healthcheck. **The first run takes several minutes** while Ollama downloads the
 chat and embedding models (it waits up to 15 minutes). Later runs start in under a minute.
 
 Ollama runs on your GPU when Docker can reach one. `make up` prints what it picked, e.g.
-`ollama: amd (AMD GPU (ROCm /dev/kfd))`, and adds `infra/docker-compose.amd.yml` or
-`infra/docker-compose.nvidia.yml` to match:
+`ollama: amd (AMD GPU (ROCm /dev/kfd))`, and adds `infra/docker-compose.amd.yml`,
+`infra/docker-compose.nvidia.yml` or `infra/docker-compose.intel.yml` to match:
 
 - **NVIDIA**: works with Docker Desktop (Windows/WSL). On native Linux, install
   [nvidia-container-toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/latest/install-guide.html)
   first, otherwise you get CPU.
-- **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses the `ollama/ollama:rocm` image.
+- **AMD**: Linux with the `amdgpu` driver (`/dev/kfd` present). Uses Ollama's ROCm image (same pinned release as the default one).
+- **Intel** (Arc, Core Ultra iGPUs): native Linux with Mesa's Vulkan driver (on Arch/CachyOS,
+  `vulkan-intel`; check with `vulkaninfo --summary`). Uses Ollama's Vulkan backend, which is
+  still experimental. Only picked when there is no NVIDIA or AMD card.
 - **macOS**: always CPU (Docker can't give containers the GPU on a Mac).
 
-To choose yourself, run `make up GPU=cpu` (or `amd`, `nvidia`). To check what Ollama is
-using, run `docker compose -f infra/docker-compose.yml logs ollama | grep "inference compute"`.
+To choose yourself, run `make up GPU=cpu` (or `amd`, `nvidia`, `intel`). To check what Ollama is
+using, run `make logs | grep "inference compute"`.
 
 `.env` is only created once. When `.env.example` gains new lines after a pull, add them to
-your `.env` by hand, or delete `.env` and run `make up` again if you never edited it.
+your `.env` by hand. If `make up` stops with `missing from .env - run make new-secrets` (an
+`.env` from before random passwords), run `make new-secrets`: it writes new passwords and
+keys, keeps your other settings, course data and Ollama models, and empties the Langfuse
+traces and gateway keys made with the old ones. `.env` holds every password: never commit or
+share it.
 
 Then open **http://localhost:8000** and ask something like "Tell me about CS 331".
 
@@ -101,10 +108,10 @@ All ports are bound to `localhost` only.
 | Web UI              | http://localhost:8000      | `frontend/` served by the API (`make api`)                                       |
 | Chat API            | http://localhost:8000/chat | `POST`; interactive docs at http://localhost:8000/docs                           |
 | Debug harness       | http://localhost:8501      | `make harness` with `make api-debug`; shows state, tool calls, trace links       |
-| Langfuse            | http://localhost:3000 (`LANGFUSE_PORT`) | Traces for every request. Login:`dev@ssa.local` / `ssa-dev-password`             |
+| Langfuse            | http://localhost:3000 (`LANGFUSE_PORT`) | Traces for every request, deleted after `LANGFUSE_TRACE_RETENTION_DAYS` (7) while `make api` runs. Login: `dev@ssa.local` / `LANGFUSE_INIT_USER_PASSWORD`. Sign-up is off: invite teammates in Settings > Members |
 | LiteLLM gateway     | http://localhost:4000      | Every model call goes through here; needs a key from`.env`                       |
-| LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_MASTER_KEY`   |
-| Postgres + pgvector | `localhost:5433`           | `postgres` / `postgres`, database `ssa` (5433 so a local Postgres can keep 5432) |
+| LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_UI_PASSWORD`  |
+| Postgres + pgvector | `localhost:5433`           | `postgres` / `POSTGRES_PASSWORD`, database `ssa` (5433 so a local Postgres can keep 5432) |
 | Ollama              | not exposed                | Reachable only by the gateway inside the compose network                         |
 
 ## For UI/UX work

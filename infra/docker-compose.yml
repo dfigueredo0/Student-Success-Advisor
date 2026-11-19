@@ -1,40 +1,46 @@
 name: ssa
 
+# Every password and key comes from .env, which `make up` fills with random values
+# (infra/make_env.py). There are no fallbacks: without .env, compose stops and says which is missing.
+#
+# Every image is pinned by digest (tests/unit/test_image_pins.py): the tag names the release, the
+# digest makes sure it is that exact image. To update one, change both together and run the tests.
+
 x-langfuse-env: &langfuse-env
-  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/langfuse
-  SALT: ${LANGFUSE_SALT:-ssa-dev-salt}
-  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+  DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/langfuse
+  SALT: ${LANGFUSE_SALT:?missing from .env - run make new-secrets}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?missing from .env - run make new-secrets}
   TELEMETRY_ENABLED: "false"
   CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
   CLICKHOUSE_URL: http://clickhouse:8123
   CLICKHOUSE_USER: clickhouse
-  CLICKHOUSE_PASSWORD: clickhouse
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?missing from .env - run make new-secrets}
   CLICKHOUSE_CLUSTER_ENABLED: "false"
   LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
   LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
-  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
   LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
   LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
   LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
   LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
   LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
-  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
   LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
   LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
   LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  REDIS_AUTH: redissecret
+  REDIS_AUTH: ${REDIS_PASSWORD:?missing from .env - run make new-secrets}
 
 services:
   postgres:
-    image: pgvector/pgvector:pg16
+    image: pgvector/pgvector:0.8.6-pg16@sha256:ccc6e83d6e35e931dc7c5def2022729d5a6c370318d099181995567ff1fb4d6b
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}
       POSTGRES_DB: ssa
     ports:
       # Host 5433, not 5432, so a locally installed Postgres can keep the default port.
@@ -49,7 +55,9 @@ services:
       retries: 20
 
   ollama:
-    image: ollama/ollama:latest
+    # Pinned like the gateway: the tag says which release, the digest makes sure it is that exact
+    # image (amd64 + arm64). To update, change both together and keep the AMD override in step.
+    image: ollama/ollama:0.40.16@sha256:910d0d8107b538fb0894e63163eb195de0cc7aefcbc666dc62d3b18f71124592
     restart: unless-stopped
     environment:
       OLLAMA_MODEL: ${OLLAMA_MODEL:-qwen3:14b}
@@ -71,12 +79,18 @@ services:
     restart: unless-stopped
     command: ["--config", "/app/gateway/config.yml", "--port", "4000"]
     environment:
-      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ssa-dev-master-key}
-      LITELLM_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/litellm
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?missing from .env - run make new-secrets}
+      # Dashboard (/ui) login, separate from the master key so that key is never typed into a
+      # browser form. The master key stays for the app's own admin calls (seed_keys.py).
+      UI_USERNAME: admin
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD:?missing from .env - run make up}
+      # Same model Ollama pulls, so the gateway never asks for one that isn't there.
+      LOCAL_LLM_MODEL: ollama_chat/${OLLAMA_MODEL:-qwen3:14b}
+      LITELLM_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/litellm
       PYTHONPATH: /app/shared
       LANGFUSE_HOST: http://langfuse-web:3000
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?missing from .env - run make new-secrets}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?missing from .env - run make new-secrets}
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
@@ -97,13 +111,13 @@ services:
       start_period: 30s
 
   clickhouse:
-    image: clickhouse/clickhouse-server:25.3
+    image: clickhouse/clickhouse-server:25.3.14.14@sha256:b627d7a9bc0e0c1bac26cdbe9d2fc6316faa29c5d8a174f28f5abd57d0fa6ba2
     restart: unless-stopped
     user: "101:101"
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?missing from .env - run make new-secrets}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - clickhouse_logs:/var/log/clickhouse-server
@@ -115,22 +129,25 @@ services:
       start_period: 5s
 
   redis:
-    image: redis:7
+    image: redis:7.4.11@sha256:44960b3100c48159a66d28c18b0588c193492e25f7551d60e51dd464fc3eca5b
     restart: unless-stopped
-    command: ["--requirepass", "redissecret", "--maxmemory-policy", "noeviction"]
+    command: ["--requirepass", "${REDIS_PASSWORD:?missing from .env - run make new-secrets}", "--maxmemory-policy", "noeviction"]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redissecret", "--no-auth-warning", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?missing from .env - run make new-secrets}", "--no-auth-warning", "ping"]
       interval: 3s
       timeout: 3s
       retries: 20
 
   minio:
-    image: cgr.dev/chainguard/minio
+    # MinIO no longer publishes official images; Chainguard's free build only has `latest`,
+    # so this is pinned by digest alone (Nov 19, 2026). Old digests may be removed: if a pull
+    # fails, take the current one from `docker buildx imagetools inspect cgr.dev/chainguard/minio`.
+    image: cgr.dev/chainguard/minio@sha256:16b824a0016ffad3dfa8b059755f83800aa42ca68fe86f1782cabd0c5a16d322
     restart: unless-stopped
     entrypoint: ["sh", "-c", "mkdir -p /data/langfuse && minio server --address ':9000' --console-address ':9001' /data"]
     environment:
       MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: miniosecret
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -141,7 +158,8 @@ services:
       start_period: 5s
 
   langfuse-worker:
-    image: langfuse/langfuse-worker:3
+    # Keep both Langfuse images on the same release.
+    image: langfuse/langfuse-worker:3.225.11@sha256:8a28c946bb5401eef488153fa294db5a79bd99dd5c90db8e4d39559374c9ebd3
     restart: unless-stopped
     environment:
       <<: *langfuse-env
@@ -163,24 +181,27 @@ services:
       start_period: 20s
 
   langfuse-web:
-    image: langfuse/langfuse:3
+    image: langfuse/langfuse:3.225.11@sha256:a343f64e035eb01aeea358703a0428945d909d01e19452509a5a830862dda878
     restart: unless-stopped
     environment:
       <<: *langfuse-env
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3000}
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ssa-dev-nextauth-secret}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?missing from .env - run make new-secrets}
+      # No self sign-up: only the account created below, and teammates invited from inside
+      # (Settings > Members), can log in.
+      AUTH_DISABLE_SIGNUP: "true"
       # Headless init: a fixed org/project/API keys so tests and the app can
       # trace without anyone clicking through the UI.
       LANGFUSE_INIT_ORG_ID: ssa
       LANGFUSE_INIT_ORG_NAME: Student Success Advisor
       LANGFUSE_INIT_PROJECT_ID: ssa-dev
       LANGFUSE_INIT_PROJECT_NAME: ssa-dev
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?missing from .env - run make new-secrets}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?missing from .env - run make new-secrets}
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-dev@ssa.local}
       LANGFUSE_INIT_USER_NAME: dev
-      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ssa-dev-password}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:?missing from .env - run make new-secrets}
     ports:
       - "127.0.0.1:${LANGFUSE_PORT:-3000}:3000"
     depends_on:

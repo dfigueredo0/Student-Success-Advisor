@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Policy - Student Success Advisor</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="policy.css">
+</head>
+<body class="policy-page">
+<script>
+    // Same theme as the advisor (app.js saves it); this is the only thing kept in your browser.
+    try { if (localStorage.getItem('theme') === 'dark') document.body.classList.add('dark-mode'); } catch (e) {}
+</script>
+<main class="policy-wrap">
+    <a class="policy-back" href="/">&larr; Back to the advisor</a>
+    <article class="policy-card">
+        <h1>Privacy Policy</h1>
+        <p class="policy-meta">Effective November 19, 2026</p>
+
+        <p class="policy-note">
+            The Student Success Advisor is a student project (Illinois Tech IPRO 497, Team 3). It is
+            not an official Illinois Tech service, and this is not an official university policy.
+            Nothing the advisor says is an official academic decision.
+        </p>
+
+        <h2 id="summary">The short version</h2>
+        <ul>
+            <li>There are no accounts, no logins and no cookies. Nothing ties a conversation to your name.</li>
+            <li>The AI model runs on the project's own computer. Your messages are not sent to outside AI companies.</li>
+            <li>Conversations are deleted after 24 hours without activity. Transcript PDFs are read and then discarded.</li>
+            <li>We never sell your data, show ads, or use third-party analytics or trackers.</li>
+        </ul>
+
+        <h2 id="what-we-collect">What the advisor handles, and for how long</h2>
+        <table class="policy-table">
+            <thead>
+                <tr><th>What</th><th>Why</th><th>How long</th></tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td><strong>Your messages</strong> (up to 4,000 characters each)</td>
+                    <td>To understand what you are asking and answer it</td>
+                    <td>Stored with your conversation and deleted after 24 hours without activity</td>
+                </tr>
+                <tr>
+                    <td><strong>Your transcript</strong>, if you upload one (PDF, up to 5 MB)</td>
+                    <td>To read your completed and in-progress courses, grades and major, so advice fits your record</td>
+                    <td>The PDF itself is never saved. The courses, grades and major read from it are kept with your conversation for 24 hours after your last activity</td>
+                </tr>
+                <tr>
+                    <td><strong>Your conversation</strong>, under a random conversation ID</td>
+                    <td>So the advisor remembers what you already said</td>
+                    <td>Deleted automatically after 24 hours without activity</td>
+                </tr>
+                <tr>
+                    <td><strong>Saved chat files</strong> ("Save chat")</td>
+                    <td>So you can continue later without an account</td>
+                    <td>The file is saved on your device only; we keep no copy. Loading it restores your courses, grades and major. Earlier messages are shown to you but not given back to the AI</td>
+                </tr>
+                <tr>
+                    <td><strong>Monitoring logs</strong> (Langfuse)</td>
+                    <td>To find errors and spot attempts to misuse the advisor</td>
+                    <td>Deleted after 7 days. They contain message text, but grades, major and course lists are hidden, and the conversation ID is replaced with a scrambled code</td>
+                </tr>
+                <tr>
+                    <td><strong>AI gateway records</strong> (LiteLLM)</td>
+                    <td>To enforce usage limits and record blocked or failed requests</td>
+                    <td>Time, which part of the advisor made the request, the model and its size. No message text</td>
+                </tr>
+                <tr>
+                    <td><strong>Eligibility-check records</strong></td>
+                    <td>When the advisor checks something like dropping a course, the check and its result are recorded to improve the advisor</td>
+                    <td>These can include the courses and grades the check used. They are not linked to your conversation ID. They currently have no expiry date, and the team will limit them before the advisor is used by students</td>
+                </tr>
+                <tr>
+                    <td><strong>Your theme choice</strong></td>
+                    <td>To remember light or dark mode</td>
+                    <td>Kept in your own browser only, until you clear it</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <h2 id="how-we-protect">How we protect it</h2>
+        <ul>
+            <li><strong>Private AI.</strong> Every AI request goes through one gateway to a model on the project's own computer, and nowhere else.</li>
+            <li><strong>Personal data filter.</strong> Every answer is checked for student IDs, student email addresses, phone numbers, Social Security numbers and birth dates, which are replaced with "[removed]" before you see them.</li>
+            <li><strong>Misuse checks.</strong> Messages that try to override the advisor's instructions are blocked and logged, and each part of the advisor may only use its own tools, with limits on what it can send them.</li>
+            <li><strong>Locked-down systems.</strong> The database and dashboards accept connections only from the computer running the advisor. Every installation gets its own random passwords, and only the project team can sign in to the dashboards.</li>
+            <li><strong>Automatic deletion.</strong> Conversations are deleted after 24 hours without activity and monitoring logs after 7 days, without anyone having to remember.</li>
+            <li><strong>People for important questions.</strong> Crisis, academic standing, appeals, financial aid, visa and similar questions are always handed to the right Illinois Tech office or a crisis line instead of being answered by the AI.</li>
+        </ul>
+
+        <h2 id="who-sees-it">Who can see your information</h2>
+        <p>
+            Only members of the project team who can sign in to the monitoring dashboard can see monitoring
+            logs, and they review them to fix errors and look for misuse. We do not share your information
+            with anyone else, except where the law requires it.
+        </p>
+
+        <h2 id="your-choices">Your choices</h2>
+        <ul>
+            <li>You do not have to upload a transcript. You can try a sample student, or tell the advisor your courses yourself.</li>
+            <li>Please do not type your Social Security number, passwords, student ID, or health or financial account details. The filter is a safety net, not a guarantee.</li>
+            <li>To have your conversation deleted before the 24 hours are up, contact the team with the date and time you used the advisor.</li>
+        </ul>
+
+        <h2 id="changes">Changes to this policy</h2>
+        <p>
+            If how the advisor handles information changes, for example if a different AI model is added,
+            this page will be updated first and its effective date changed.
+        </p>
+
+        <h2 id="contact">Contact</h2>
+        <p>
+            Questions or requests: the Student Success Advisor team, Illinois Tech IPRO 497, Team 3, at
+            <strong>[team contact email]</strong>. See also the <a href="acceptable-use.html">Acceptable Use Policy</a>.
+        </p>
+    </article>
+</main>
+</body>
+</html>

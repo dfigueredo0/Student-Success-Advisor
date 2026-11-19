@@ -5,6 +5,7 @@ from contextlib import asynccontextmanager
 from datetime import timedelta
 from pathlib import Path
 
+import httpx
 from fastapi import FastAPI
 from fastapi.concurrency import run_in_threadpool
 from fastapi.staticfiles import StaticFiles
@@ -12,6 +13,7 @@ from langfuse import Langfuse
 from langgraph.checkpoint.postgres import PostgresSaver
 
 from api.routes import chat, resume, saved_chat, transcript
+from api.trace_retention import delete_old_traces
 from api.tracing import mask_trace
 from memory.retention import delete_stale_conversations
 from orchestrator.graph import build_graph
@@ -32,6 +34,18 @@ async def purge_old_conversations(saver: PostgresSaver, max_age: timedelta) -> N
                 log.info("deleted %d conversations older than %s", len(deleted), max_age)
         except Exception:  # a failed purge must not take the API down; retry next round
             log.exception("deleting old conversations failed")
+        await asyncio.sleep(PURGE_EVERY.total_seconds())
+
+
+async def purge_old_traces(client: httpx.Client, max_age: timedelta) -> None:
+    """Delete Langfuse traces older than max_age at startup, then every PURGE_EVERY."""
+    while True:
+        try:
+            deleted = await run_in_threadpool(delete_old_traces, client, max_age)
+            if deleted:
+                log.info("deleted %d Langfuse traces older than %s", deleted, max_age)
+        except Exception:  # Langfuse down must not take the API down; retry next round
+            log.exception("deleting old Langfuse traces failed")
         await asyncio.sleep(PURGE_EVERY.total_seconds())
 
 
@@ -57,8 +71,18 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
         purge = asyncio.create_task(
             purge_old_conversations(saver, timedelta(hours=s.conversation_ttl_hours))
         )
+        traces = httpx.Client(
+            base_url=s.langfuse_host,
+            auth=(s.langfuse_public_key, s.langfuse_secret_key.get_secret_value()),
+            timeout=30,
+        )
+        purge_traces = asyncio.create_task(
+            purge_old_traces(traces, timedelta(days=s.langfuse_trace_retention_days))
+        )
         yield
         purge.cancel()
+        purge_traces.cancel()
+        traces.close()
     langfuse.flush()
 
 

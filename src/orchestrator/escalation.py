@@ -36,8 +36,9 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         ),
         "I'm really sorry you're going through this, and I'm glad you reached out. Please call "
         "or text 988 (Suicide & Crisis Lifeline) right now; it's free and open 24/7. If you're "
-        "in immediate danger, call 911. You can also reach the Student Health and Wellness "
-        "Center for counseling.",
+        "in immediate danger, call 911, and on campus also call Public Safety at 312.808.6363. "
+        "Illinois Tech's free 24/7 student support line is 866.349.5575, and the Student Health "
+        "and Wellness Center (SHWC) offers counseling.",
     ),
     (
         "distress",
@@ -49,9 +50,10 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
             re.I,
         ),
         "That sounds really hard, and you don't have to sort it out alone. Your academic "
-        "advisor can help you look at your options for this class, and the Student Health and "
-        "Wellness Center offers free counseling. If it ever feels like too much, you can call "
-        "or text 988 any time.",
+        "advisor can help you look at your options for this class, and the Academic Resource "
+        "Center (ARC) offers tutoring. The Student Health and Wellness Center (SHWC) offers "
+        "counseling, and Illinois Tech's free 24/7 student support line is 866.349.5575. If it "
+        "ever feels like too much, you can call or text 988 any time.",
     ),
     (
         "probation",
@@ -62,8 +64,9 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         ),
         "Academic standing is something your academic advisor needs to go through with you, "
         "since it depends on your full record and the university's policies. Please contact "
-        "your advisor or the Dean of Students office soon; they can explain what it means for "
-        "you and what to do next.",
+        "your advisor or the Office of Undergraduate Academic Affairs (Graduate Academic Affairs "
+        "for graduate students) soon; they can explain what it means for you and what to do "
+        "next.",
     ),
     (
         "appeal",
@@ -71,9 +74,11 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
             r"\bappeal\w*|\bcheat(ing|ed)?\b|\bplagiari\w+|\bacademic (integrity|dishonesty)",
             re.I,
         ),
-        "I can't advise on appeals or academic integrity cases. Start with your instructor, "
-        "then your academic advisor or the Dean of Students office, who can walk you through "
-        "the official process and deadlines.",
+        "I can't advise on appeals or academic integrity cases. For a grade, start with your "
+        "instructor, then the department. For dismissal, suspension or academic standing, "
+        "contact the Office of Undergraduate Academic Affairs (Graduate Academic Affairs for "
+        "graduate students), which works with the Academic Standing Committee. Your academic "
+        "advisor can walk you through the official process and deadlines.",
     ),
     (
         "financial",
@@ -84,7 +89,8 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         ),
         "Questions about financial aid, tuition, visas or legal matters need an official "
         "answer, so I won't guess. Please contact the Office of Financial Aid (aid and "
-        "scholarships), the Student Accounting office (bills and tuition), or the Office of "
+        "scholarships), the Student Accounting office (bills and tuition, "
+        "bursar@illinoistech.edu), or the Office of "
         "Global Services (visa and enrollment status) before you change your schedule.",
     ),
     (
@@ -100,14 +106,18 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
         "Withdrawing can affect your financial aid, a student visa, and how long your degree "
         "takes, so please talk to your academic advisor before you do it. If you get aid or "
         "are on a visa, check with the Office of Financial Aid or the Office of Global Services "
-        "too.",
+        "too. The Office of Undergraduate Academic Affairs or the Registrar can tell you the "
+        "withdrawal deadlines and how a W grade works.",
     ),
     (
         "major_change",
         re.compile(r"\b(switch|change|changing|switching)\b.{0,20}\bmajors?\b", re.I),
         "Changing majors is a decision to make with your academic advisor; they can check how "
-        "your completed courses count toward the new program. I can look up courses in either "
-        "program if that helps.",
+        "your completed courses count toward the new program. The new major's department has to "
+        "approve it, through the Office of Undergraduate Academic Affairs. On academic "
+        "probation, you need approval from both Academic Affairs and the new department, and on "
+        "a student visa, check with the Office of Global Services about your I-20. I can look "
+        "up courses in either program if that helps.",
     ),
     (
         "transfer_credit",
@@ -116,8 +126,9 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
             r"|\bcommunity college\b",
             re.I,
         ),
-        "Only the Registrar's office and the department can decide how transfer or AP credit "
-        "counts. Your academic advisor can help you request an evaluation.",
+        "How transfer, AP or IB credit counts is decided by the Office of Undergraduate "
+        "Academic Affairs and the department (Undergraduate Admission for incoming students), "
+        "not by me. Your academic advisor can help you request an evaluation.",
     ),
     (
         "exception",
@@ -128,8 +139,9 @@ _RULES: list[tuple[str, re.Pattern[str], str]] = [
             re.I,
         ),
         "I can only give advice from the catalog, so I can't approve or confirm exceptions "
-        "like overrides, substitutions or extra credits. Only your department or academic "
-        "advisor can grant one, and it should be in writing. Ask me about a course's "
+        "like overrides, substitutions or extra credits. Only your academic advisor, the "
+        "department or Academic Affairs can grant one, through an official approval or permit, "
+        "not a verbal okay. Ask me about a course's "
         "prerequisites if you'd like to see the catalog rule.",
     ),
 ]
