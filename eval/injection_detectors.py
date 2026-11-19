@@ -7,8 +7,13 @@ it blocks by mistake, on the injection gold set plus the routing questions.
     (same command with --detector promptguard for Meta's Prompt Guard 2; its download needs
     a Hugging Face login with the Llama licence accepted)
 
-Cases (data/gold/injection.jsonl) come from three sources, scored separately:
+Cases (data/gold/injection.jsonl) come from four sources, scored separately:
   * written: our advisor-specific attacks and tricky normal questions
+  * catalog: attacks hidden in catalog-style text (footnotes, rule rows, course descriptions),
+    against real requirement text from the degree-requirements fixtures and tricky normal
+    rules. The gateway guardrail never sees this text (it checks only the student's message),
+    so these measure whether scanning catalog text before it reaches a model would help
+    (docs/adr/0002-untrusted-catalog-text.md).
   * deepset: the deepset/prompt-injections test split (Apache-2.0). Its labels count any
     off-task request as an attack, and public classifiers may have trained on it, so it
     flatters them; "written" is the fairer comparison.
