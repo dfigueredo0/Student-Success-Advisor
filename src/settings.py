@@ -54,6 +54,9 @@ class Settings(BaseSettings):
     langfuse_host: str = "http://localhost:3000"
     langfuse_public_key: str = ""
     langfuse_secret_key: SecretStr = SecretStr("")
+    # Traces (message text included) older than this are deleted; 7 days leaves room for the
+    # weekly review of flagged and blocked messages (api/trace_retention.py)
+    langfuse_trace_retention_days: int = Field(default=7, ge=1)
 
     @model_validator(mode="after")
     def _no_debug_in_prod(self) -> "Settings":
