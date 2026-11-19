@@ -1,32 +1,35 @@
 name: ssa
 
+# Every password and key comes from .env, which `make up` fills with random values
+# (infra/make_env.py). There are no fallbacks: without .env, compose stops and says which is missing.
+
 x-langfuse-env: &langfuse-env
-  DATABASE_URL: postgresql://postgres:postgres@postgres:5432/langfuse
-  SALT: ${LANGFUSE_SALT:-ssa-dev-salt}
-  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:-0000000000000000000000000000000000000000000000000000000000000000}
+  DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/langfuse
+  SALT: ${LANGFUSE_SALT:?missing from .env - run make new-secrets}
+  ENCRYPTION_KEY: ${LANGFUSE_ENCRYPTION_KEY:?missing from .env - run make new-secrets}
   TELEMETRY_ENABLED: "false"
   CLICKHOUSE_MIGRATION_URL: clickhouse://clickhouse:9000
   CLICKHOUSE_URL: http://clickhouse:8123
   CLICKHOUSE_USER: clickhouse
-  CLICKHOUSE_PASSWORD: clickhouse
+  CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?missing from .env - run make new-secrets}
   CLICKHOUSE_CLUSTER_ENABLED: "false"
   LANGFUSE_S3_EVENT_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_EVENT_UPLOAD_REGION: auto
   LANGFUSE_S3_EVENT_UPLOAD_ACCESS_KEY_ID: minio
-  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_EVENT_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
   LANGFUSE_S3_EVENT_UPLOAD_ENDPOINT: http://minio:9000
   LANGFUSE_S3_EVENT_UPLOAD_FORCE_PATH_STYLE: "true"
   LANGFUSE_S3_EVENT_UPLOAD_PREFIX: events/
   LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: langfuse
   LANGFUSE_S3_MEDIA_UPLOAD_REGION: auto
   LANGFUSE_S3_MEDIA_UPLOAD_ACCESS_KEY_ID: minio
-  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: miniosecret
+  LANGFUSE_S3_MEDIA_UPLOAD_SECRET_ACCESS_KEY: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
   LANGFUSE_S3_MEDIA_UPLOAD_ENDPOINT: http://minio:9000
   LANGFUSE_S3_MEDIA_UPLOAD_FORCE_PATH_STYLE: "true"
   LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: media/
   REDIS_HOST: redis
   REDIS_PORT: "6379"
-  REDIS_AUTH: redissecret
+  REDIS_AUTH: ${REDIS_PASSWORD:?missing from .env - run make new-secrets}
 
 services:
   postgres:
@@ -34,7 +37,7 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}
       POSTGRES_DB: ssa
     ports:
       # Host 5433, not 5432, so a locally installed Postgres can keep the default port.
@@ -73,14 +76,14 @@ services:
     restart: unless-stopped
     command: ["--config", "/app/gateway/config.yml", "--port", "4000"]
     environment:
-      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:-sk-ssa-dev-master-key}
+      LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?missing from .env - run make new-secrets}
       # Same model Ollama pulls, so the gateway never asks for one that isn't there.
       LOCAL_LLM_MODEL: ollama_chat/${OLLAMA_MODEL:-qwen3:14b}
-      LITELLM_DATABASE_URL: postgresql://postgres:postgres@postgres:5432/litellm
+      LITELLM_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/litellm
       PYTHONPATH: /app/shared
       LANGFUSE_HOST: http://langfuse-web:3000
-      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
-      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
+      LANGFUSE_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?missing from .env - run make new-secrets}
+      LANGFUSE_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?missing from .env - run make new-secrets}
     ports:
       - "127.0.0.1:4000:4000"
     volumes:
@@ -107,7 +110,7 @@ services:
     environment:
       CLICKHOUSE_DB: default
       CLICKHOUSE_USER: clickhouse
-      CLICKHOUSE_PASSWORD: clickhouse
+      CLICKHOUSE_PASSWORD: ${CLICKHOUSE_PASSWORD:?missing from .env - run make new-secrets}
     volumes:
       - clickhouse_data:/var/lib/clickhouse
       - clickhouse_logs:/var/log/clickhouse-server
@@ -121,9 +124,9 @@ services:
   redis:
     image: redis:7
     restart: unless-stopped
-    command: ["--requirepass", "redissecret", "--maxmemory-policy", "noeviction"]
+    command: ["--requirepass", "${REDIS_PASSWORD:?missing from .env - run make new-secrets}", "--maxmemory-policy", "noeviction"]
     healthcheck:
-      test: ["CMD", "redis-cli", "-a", "redissecret", "--no-auth-warning", "ping"]
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:?missing from .env - run make new-secrets}", "--no-auth-warning", "ping"]
       interval: 3s
       timeout: 3s
       retries: 20
@@ -134,7 +137,7 @@ services:
     entrypoint: ["sh", "-c", "mkdir -p /data/langfuse && minio server --address ':9000' --console-address ':9001' /data"]
     environment:
       MINIO_ROOT_USER: minio
-      MINIO_ROOT_PASSWORD: miniosecret
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:?missing from .env - run make new-secrets}
     volumes:
       - minio_data:/data
     healthcheck:
@@ -173,18 +176,18 @@ services:
       <<: *langfuse-env
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3000}
-      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:-ssa-dev-nextauth-secret}
+      NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?missing from .env - run make new-secrets}
       # Headless init: a fixed org/project/API keys so tests and the app can
       # trace without anyone clicking through the UI.
       LANGFUSE_INIT_ORG_ID: ssa
       LANGFUSE_INIT_ORG_NAME: Student Success Advisor
       LANGFUSE_INIT_PROJECT_ID: ssa-dev
       LANGFUSE_INIT_PROJECT_NAME: ssa-dev
-      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:-pk-lf-ssa-dev}
-      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:-sk-lf-ssa-dev}
+      LANGFUSE_INIT_PROJECT_PUBLIC_KEY: ${LANGFUSE_PUBLIC_KEY:?missing from .env - run make new-secrets}
+      LANGFUSE_INIT_PROJECT_SECRET_KEY: ${LANGFUSE_SECRET_KEY:?missing from .env - run make new-secrets}
       LANGFUSE_INIT_USER_EMAIL: ${LANGFUSE_INIT_USER_EMAIL:-dev@ssa.local}
       LANGFUSE_INIT_USER_NAME: dev
-      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:-ssa-dev-password}
+      LANGFUSE_INIT_USER_PASSWORD: ${LANGFUSE_INIT_USER_PASSWORD:?missing from .env - run make new-secrets}
     ports:
       - "127.0.0.1:${LANGFUSE_PORT:-3000}:3000"
     depends_on:
