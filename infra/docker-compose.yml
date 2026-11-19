@@ -77,6 +77,10 @@ services:
     command: ["--config", "/app/gateway/config.yml", "--port", "4000"]
     environment:
       LITELLM_MASTER_KEY: ${LITELLM_MASTER_KEY:?missing from .env - run make new-secrets}
+      # Dashboard (/ui) login, separate from the master key so that key is never typed into a
+      # browser form. The master key stays for the app's own admin calls (seed_keys.py).
+      UI_USERNAME: admin
+      UI_PASSWORD: ${LITELLM_UI_PASSWORD:?missing from .env - run make up}
       # Same model Ollama pulls, so the gateway never asks for one that isn't there.
       LOCAL_LLM_MODEL: ollama_chat/${OLLAMA_MODEL:-qwen3:14b}
       LITELLM_DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD:?missing from .env - run make new-secrets}@postgres:5432/litellm
@@ -177,6 +181,9 @@ services:
       HOSTNAME: 0.0.0.0
       NEXTAUTH_URL: http://localhost:${LANGFUSE_PORT:-3000}
       NEXTAUTH_SECRET: ${LANGFUSE_NEXTAUTH_SECRET:?missing from .env - run make new-secrets}
+      # No self sign-up: only the account created below, and teammates invited from inside
+      # (Settings > Members), can log in.
+      AUTH_DISABLE_SIGNUP: "true"
       # Headless init: a fixed org/project/API keys so tests and the app can
       # trace without anyone clicking through the UI.
       LANGFUSE_INIT_ORG_ID: ssa

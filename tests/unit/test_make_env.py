@@ -92,3 +92,25 @@ def test_compose_has_no_fixed_secrets_or_fallbacks(make_env: Any) -> None:
         assert f"${{{name}:-" not in COMPOSE, f"{name} has a fallback"
     used = set(re.findall(r"\$\{([A-Z_]+):\?", COMPOSE))
     assert used <= set(make_env.SECRETS), used - set(make_env.SECRETS)
+
+
+def test_add_missing_fills_only_new_secrets(make_env: Any) -> None:
+    rendered = make_env.render(EXAMPLE)
+    current = re.sub(r"(?m)^LITELLM_UI_PASSWORD=.*$", "LITELLM_UI_PASSWORD=", rendered)
+    before = make_env.read_env(current)
+    text, added = make_env.add_missing(current)
+    after = make_env.read_env(text)
+    assert added == ["LITELLM_UI_PASSWORD"]
+    assert len(after["LITELLM_UI_PASSWORD"]) >= 24
+    assert all(after[k] == v for k, v in before.items() if k != "LITELLM_UI_PASSWORD")
+    assert make_env.add_missing(text) == (text, [])  # running again changes nothing
+
+
+def test_add_missing_leaves_a_pre_random_env_alone(make_env: Any) -> None:
+    old = "DATABASE_URL=postgresql+psycopg://postgres:postgres@localhost:5433/ssa\n"
+    assert make_env.add_missing(old) == (old, [])
+
+
+def test_dashboards_are_locked_down() -> None:
+    assert 'AUTH_DISABLE_SIGNUP: "true"' in COMPOSE
+    assert "UI_PASSWORD: ${LITELLM_UI_PASSWORD:?" in COMPOSE

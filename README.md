@@ -79,9 +79,9 @@ All ports are bound to `localhost` only.
 | Web UI              | http://localhost:8000      | `frontend/` served by the API (`make api`)                                       |
 | Chat API            | http://localhost:8000/chat | `POST`; interactive docs at http://localhost:8000/docs                           |
 | Debug harness       | http://localhost:8501      | `make harness` with `make api-debug`; shows state, tool calls, trace links       |
-| Langfuse            | http://localhost:3000 (`LANGFUSE_PORT`) | Traces for every request. Login: `dev@ssa.local` / `LANGFUSE_INIT_USER_PASSWORD` |
+| Langfuse            | http://localhost:3000 (`LANGFUSE_PORT`) | Traces for every request. Login: `dev@ssa.local` / `LANGFUSE_INIT_USER_PASSWORD`. Sign-up is off: invite teammates in Settings > Members |
 | LiteLLM gateway     | http://localhost:4000      | Every model call goes through here; needs a key from`.env`                       |
-| LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_MASTER_KEY`   |
+| LiteLLM dashboard   | http://localhost:4000/ui   | Keys, usage, failed and blocked requests. Login: `admin` / `LITELLM_UI_PASSWORD`  |
 | Postgres + pgvector | `localhost:5433`           | `postgres` / `POSTGRES_PASSWORD`, database `ssa` (5433 so a local Postgres can keep 5432) |
 | Ollama              | not exposed                | Reachable only by the gateway inside the compose network                         |
 
