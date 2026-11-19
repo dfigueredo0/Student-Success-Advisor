@@ -232,7 +232,6 @@ function showWorkspace() {
     renderTranscriptTable();
     renderFlowchart();
     renderCalendar();
-    initCalendarResize(); // Explicitly bind resize handle when workspace becomes visible
 }
 
 function resetToUpload() {
@@ -476,30 +475,31 @@ function renderCalendar() {
 
     timeSlots.forEach(time => {
         const tr = document.createElement('tr');
-        
-        let rowHtml = `<td class="time-col">${time}</td>`;
+        const timeTd = document.createElement('td');
+        timeTd.className = 'time-col';
+        timeTd.innerText = time;
+        tr.appendChild(timeTd);
 
         ['M', 'T', 'W', 'R', 'F'].forEach(dayCode => {
+            const td = document.createElement('td');
             const matchingCourse = activeCourses.find(c => {
                 const sched = c.schedule || '';
                 return sched.includes(dayCode) && sched.includes(time);
             });
 
             if (matchingCourse) {
-                rowHtml += `
-                    <td>
-                        <div class="calendar-event-card">
-                            <strong>${esc(matchingCourse.code)}</strong>
-                            <span>${esc(matchingCourse.title)}</span>
-                        </div>
-                    </td>
+                const card = document.createElement('div');
+                card.className = 'calendar-event-card';
+                card.onclick = () => openModal(matchingCourse);
+                card.innerHTML = `
+                    <strong>${esc(matchingCourse.code)}</strong>
+                    <span>${esc(matchingCourse.title)}</span>
                 `;
-            } else {
-                rowHtml += `<td></td>`;
+                td.appendChild(card);
             }
+            tr.appendChild(td);
         });
 
-        tr.innerHTML = rowHtml;
         tbody.appendChild(tr);
     });
 }
@@ -715,8 +715,6 @@ function initCalendarResize() {
     }
 }
 
-/* Add to Section 10 or at the end of app.js */
-
 function toggleDarkMode() {
     document.body.classList.toggle('dark-mode');
     const isDark = document.body.classList.contains('dark-mode');
@@ -731,7 +729,6 @@ function updateThemeButtonText(isDark) {
     }
 }
 
-// Restore saved theme on initial script load
 document.addEventListener('DOMContentLoaded', () => {
     const savedTheme = localStorage.getItem('theme');
     if (savedTheme === 'dark') {

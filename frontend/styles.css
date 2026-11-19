@@ -561,16 +561,16 @@ header .logo {
 }
 
 .msg-system {
-    background-color: var(--brand-accent-bg);
-    border: 1px solid var(--brand-accent-border);
+    background-color: var(--btn-sec-bg);
+    border: 1px solid var(--border-color);
     align-self: flex-start;
-    color: var(--brand-primary);
+    color: var(--text-primary);
 }
 
 .msg-user {
-    background-color: var(--btn-sec-bg);
-    color: var(--text-primary);
-    border: 1px solid var(--border-color);
+    background-color: var(--brand-accent-bg);
+    color: var(--brand-primary);
+    border: 1px solid var(--brand-accent-border);
     align-self: flex-end;
 }
 
@@ -625,63 +625,25 @@ header .logo {
     color: var(--text-secondary);
 }
 
-/* Calendar Section & Resize Handle */
-.resize-handle {
-    height: 6px;
-    background-color: var(--border-light);
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-    cursor: row-resize;
-    position: relative;
-    user-select: none;
-    z-index: 10;
-}
-
-.resize-handle:hover,
-.resize-handle.resizing {
-    background-color: var(--brand-primary);
-    border-color: var(--brand-hover);
-}
-
-.calendar-section {
-    background-color: var(--bg-surface);
-    height: 240px;
-    min-height: 100px;
-    max-height: 500px;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-}
-
-.calendar-header {
-    background-color: var(--bg-subtle);
-    border-bottom: 1px solid var(--border-light);
-    padding: 6px 15px;
-    font-size: 12px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
+/* Calendar View Styles */
 .calendar-grid-container {
-    flex: 1;
-    overflow-y: auto;
-    padding: 10px 15px;
+    margin-top: 10px;
+    overflow-x: auto;
 }
 
 .calendar-table {
     width: 100%;
     border-collapse: collapse;
-    font-size: 11px;
+    font-size: 12px;
     table-layout: fixed;
 }
 
 .calendar-table th, 
 .calendar-table td {
     border: 1px solid var(--border-light);
-    padding: 6px;
+    padding: 8px;
     text-align: center;
-    height: 38px;
+    height: 48px;
     vertical-align: middle;
 }
 
@@ -695,7 +657,7 @@ header .logo {
     background-color: var(--time-col-bg);
     font-weight: bold;
     color: var(--text-muted);
-    font-size: 10px;
+    font-size: 11px;
 }
 
 .calendar-event-card {
@@ -703,11 +665,16 @@ header .logo {
     border: 1px solid var(--event-card-border);
     border-left: 3px solid var(--event-card-accent);
     color: var(--event-card-text);
-    padding: 2px 4px;
+    padding: 4px 6px;
     border-radius: 2px;
-    font-size: 10px;
+    font-size: 11px;
     text-align: left;
-    line-height: 1.2;
+    line-height: 1.3;
+    cursor: pointer;
+}
+
+.calendar-event-card:hover {
+    opacity: 0.9;
 }
 
 .calendar-event-card strong {

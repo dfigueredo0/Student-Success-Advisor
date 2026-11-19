@@ -94,6 +94,9 @@
                     <div class="nav-item active" id="nav-trajectory" onclick="switchView('trajectory')">
                         Course Trajectory Map
                     </div>
+                    <div class="nav-item" id="nav-schedule" onclick="switchView('schedule')">
+                        Class Schedule
+                    </div>
                     <div class="nav-item" id="nav-audit" onclick="switchView('audit')">
                         Degree Audit
                     </div>
@@ -144,7 +147,7 @@
             <!-- CENTER MAIN CONTENT AREA -->
             <div class="main-content-area">
                 
-                <!-- VIEW 1: TRAJECTORY FLOWCHART & CALENDAR -->
+                <!-- VIEW 1: TRAJECTORY FLOWCHART -->
                 <div id="view-trajectory" class="view-panel">
                     <div class="trajectory-toolbar">
                         <strong>Course Trajectory & Prerequisites Flow Map</strong>
@@ -160,37 +163,37 @@
                     <div class="flowchart-board" id="flowchart-board">
                         <!-- Dynamic Term Columns loaded via JavaScript -->
                     </div>
+                </div>
 
-                    <!-- RESIZE DRAG HANDLE -->
-                    <div id="calendar-drag-handle" class="resize-handle" title="Drag up or down to resize calendar"></div>
+                <!-- VIEW 2: WEEKLY CLASS SCHEDULE -->
+                <div id="view-schedule" class="view-panel generic-view-content hidden">
+                    <div class="table-actions-bar">
+                        <div>
+                            <h2>Weekly Class Schedule</h2>
+                            <p style="color: var(--text-secondary); font-size: 12px;">Active term enrolled and planned courses. Edit meeting times in the Parsed Transcript view.</p>
+                        </div>
+                    </div>
 
-                    <!-- CALENDAR SECTION -->
-                    <div id="calendar-section" class="calendar-section">
-                        <div class="calendar-header">
-                            <strong>Weekly Class Schedule View</strong>
-                            <span style="font-size: 11px; color: var(--text-muted);">(Active Term Enrolled / Planned Courses)</span>
-                        </div>
-                        <div class="calendar-grid-container">
-                            <table class="calendar-table">
-                                <thead>
-                                    <tr>
-                                        <th style="width: 10%;">Time</th>
-                                        <th style="width: 18%;">Monday</th>
-                                        <th style="width: 18%;">Tuesday</th>
-                                        <th style="width: 18%;">Wednesday</th>
-                                        <th style="width: 18%;">Thursday</th>
-                                        <th style="width: 18%;">Friday</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="calendar-body">
-                                    <!-- Dynamic Schedule Rows -->
-                                </tbody>
-                            </table>
-                        </div>
+                    <div class="calendar-grid-container">
+                        <table class="calendar-table">
+                            <thead>
+                                <tr>
+                                    <th style="width: 10%;">Time</th>
+                                    <th style="width: 18%;">Monday</th>
+                                    <th style="width: 18%;">Tuesday</th>
+                                    <th style="width: 18%;">Wednesday</th>
+                                    <th style="width: 18%;">Thursday</th>
+                                    <th style="width: 18%;">Friday</th>
+                                </tr>
+                            </thead>
+                            <tbody id="calendar-body">
+                                <!-- Dynamic Schedule Rows -->
+                            </tbody>
+                        </table>
                     </div>
                 </div>
 
-                <!-- VIEW 2: DEGREE AUDIT -->
+                <!-- VIEW 3: DEGREE AUDIT -->
                 <div id="view-audit" class="view-panel generic-view-content hidden">
                     <h2>Degree Requirement Audit</h2>
                     <p style="margin-bottom: 15px; color: var(--text-secondary);">Estimated from your transcript by subject code; not an official degree audit.</p>
@@ -210,12 +213,12 @@
                     </table>
                 </div>
 
-                <!-- VIEW 3: PARSED TRANSCRIPT DETAILS -->
+                <!-- VIEW 4: PARSED TRANSCRIPT DETAILS -->
                 <div id="view-transcript" class="view-panel generic-view-content hidden">
                     <div class="table-actions-bar">
                         <div>
                             <h2>Parsed Transcript & Course Records</h2>
-                            <p style="color: var(--text-secondary); font-size: 12px;">Modify course details and meeting schedules below. Updates automatically sync to your Trajectory Map & Calendar.</p>
+                            <p style="color: var(--text-secondary); font-size: 12px;">Modify course details and meeting schedules below. Updates automatically sync to your Trajectory Map & Class Schedule.</p>
                         </div>
                         <div style="display: flex; gap: 8px;">
                             <button class="btn" onclick="addNewTranscriptRow()">+ Add Course</button>
